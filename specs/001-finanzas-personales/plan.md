@@ -28,7 +28,8 @@ módulo, sin framework ni broker adicional); MongoDB como única base de datos; 
   librería de componentes UI: los componentes se construyen a medida sobre clases Tailwind.
 - Backend: Express, `@simplewebauthn/server` (research.md §1), `argon2` (research.md §2),
   `jsonwebtoken` (sesión propia, research.md §3), driver oficial de MongoDB (o `mongoose`),
-  `axios` (dolarapi.com, research.md §8).
+  `axios` (dolarapi.com, research.md §8), `zod` (validación de esquema de todo input externo,
+  FR-048, research.md §12), `helmet` (cabeceras de seguridad HTTP, FR-047, research.md §13).
 
 **Storage**: MongoDB (colecciones descriptas en `data-model.md`; cifrado en reposo a nivel de
 almacenamiento, research.md §4)
@@ -50,11 +51,15 @@ error explícito en ≤ 5s (SC-004, timeout research.md §9); alta de transacci�
 < 30s de interacción de usuario (SC-002, meta de UX, no solo de red).
 
 **Constraints**: hasheo de contraseña equivalente/superior a OWASP (FR-033); cifrado en reposo
-de datos financieros (FR-034); sin valor de conversión ante fallo/timeout de dolarapi.com
-(FR-032, RF30); sesión de 1 día con logout inmediato (FR-037, FR-041); bloqueo de 15 min tras 5
-intentos fallidos, por cuenta (FR-036); UI sin scroll horizontal desde 320px (SC-006); 45
-requisitos funcionales (FR-001 a FR-045) sin detalles de implementación adicionales fuera de los
-ya fijados por AGENTS.md/constitución.
+de datos financieros (FR-034); sin valor de conversión ante fallo/timeout de dolarapi.com o
+respuesta sin el tipo de cambio pedido (FR-032, RF30); sesión de 1 día con logout inmediato
+(FR-037, FR-041); bloqueo de 15 min tras 5 intentos fallidos, por cuenta (FR-036); protección
+CSRF vía cookie `sameSite=strict`, sin token adicional (FR-046); cabeceras de seguridad HTTP
+estándar en toda respuesta (FR-047); validación de esquema estricto de todo input externo antes
+de la capa de persistencia (FR-048); TLS terminado en la capa de despliegue, fuera del alcance
+funcional del código (Assumptions); UI sin scroll horizontal desde 320px (SC-006); 48 requisitos
+funcionales (FR-001 a FR-048) sin detalles de implementación adicionales fuera de los ya fijados
+por AGENTS.md/constitución.
 
 **Scale/Scope**: una cuenta = un usuario, sin cuentas compartidas (Assumptions); historial de
 transacciones paginado de a 50 (FR-024); 6 historias de usuario (P1 a P3); disponibilidad
@@ -138,13 +143,14 @@ puntual):
 | IV. Cero secretos hardcodeados | `MONGODB_URI`, `SESSION_JWT_SECRET`, `WEBAUTHN_RP_ID/ORIGIN`, `DOLARAPI_BASE_URL` van por variables de entorno (quickstart.md); `.env.example` sin valores reales. | **PASS** |
 | V. Tests de frontend sin backend real | `services/handleRequest.ts` centraliza toda llamada HTTP, lo que permite mockearlo por completo en tests de frontend sin tocar red (research.md §11). | **PASS** |
 | Restricciones de dominio (RF01-02, RF33, RF30) | Cubiertas explícitamente en `contracts/api.md` (rechazo de método distinto, bloqueo de última passkey, sin valor de conversión ante fallo) y `data-model.md` (`authMethod` inmutable). | **PASS** |
+| Seguridad de datos/API (FR-046 CSRF, FR-047 cabeceras, FR-048 validación de esquema) | `sameSite=strict` como única mitigación CSRF (sin token adicional, research.md §14); `helmet` para cabeceras estándar (research.md §13); `zod` valida todo input externo antes de llegar a comandos/queries (research.md §12). No introduce secretos, IA ni caché de cotizaciones. | **PASS** |
 
 No hay violaciones que requieran `Complexity Tracking`.
 
 **Re-check post Phase 1** (tras `data-model.md`, `contracts/api.md`, `quickstart.md`): el modelo
 de datos y los contratos no introducen ninguna llamada a IA, ningún secreto embebido, ninguna
 caché de cotizaciones, y mantienen `security_events` fuera de cualquier contrato expuesto al
-usuario final. Los seis chequeos de la tabla se mantienen en **PASS/N/A** sin cambios.
+usuario final. Los siete chequeos de la tabla se mantienen en **PASS/N/A** sin cambios.
 
 ## Project Structure
 
@@ -206,7 +212,9 @@ backend/
 │   │   ├── charts/                # solo application/queries
 │   │   ├── converter/
 │   │   └── security-log/         # solo escritura interna, sin interface/ pública (FR-040)
-│   └── shared/                    # kernel: config/env, middlewares, manejo de errores, bus CQRS
+│   └── shared/                    # kernel: config/env, middlewares (errores, seguridad HTTP
+│                                    # vía `helmet` FR-047, validación de esquema vía `zod`
+│                                    # FR-048), bus CQRS
 └── tests/
     ├── unit/                      # domain + application, por módulo
     ├── integration/                # supertest contra Express + Mongo en memoria

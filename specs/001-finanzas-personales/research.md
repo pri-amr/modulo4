@@ -130,8 +130,48 @@
   pero `nock` es más directo para tests puramente backend sin necesidad de interceptar en el
   navegador.
 
+## 12. Validación de esquema de entrada (FR-048)
+
+- **Decision**: `zod` como validador de esquema para todo `body`/`query` de cada endpoint
+  Express, aplicado antes de construir el Command/Query que despacha el bus CQRS
+  (`shared/http/`).
+- **Rationale**: FR-048 exige que ningún input externo alcance la capa de persistencia sin
+  pasar por un esquema estricto de tipo/forma; `zod` se integra sin fricción con TypeScript
+  (inferencia de tipos desde el esquema), evita duplicar la validación entre el shape-check
+  genérico y las reglas de negocio específicas de cada campo (FR-017, FR-043, FR-044), y no
+  depende de un framework adicional (coherente con Express puro, research.md §10).
+- **Alternatives considered**: `joi` (API menos ergonómica con TypeScript, sin inferencia de
+  tipos nativa); validación manual por comando (rechazada: dispersa la lógica de shape-check,
+  alto riesgo de un campo sin validar, exactamente el caso que FR-048 busca prevenir).
+
+## 13. Cabeceras de seguridad HTTP (FR-047)
+
+- **Decision**: `helmet` montado como middleware global en `backend/src/app.ts`, con su
+  configuración por defecto (incluye política de contenido, prevención de MIME sniffing y de
+  embebido en iframes de terceros).
+- **Rationale**: es la implementación de referencia en el ecosistema Express para el set base de
+  cabeceras de seguridad que exige FR-047, sin requerir configuración manual cabecera por
+  cabecera ni mantenimiento propio de una lista de valores recomendados.
+- **Alternatives considered**: configurar cada cabecera manualmente en `errorHandler`/middleware
+  propio (rechazada: reimplementa lo que `helmet` ya resuelve, con mayor riesgo de omitir una
+  cabecera relevante).
+
+## 14. Protección CSRF (FR-046)
+
+- **Decision**: la cookie de sesión (research.md §3) se configura con `sameSite=strict` además
+  de `httpOnly`/`secure`; esa configuración es la única protección CSRF exigida, sin un token
+  anti-CSRF adicional por operación.
+- **Rationale**: `sameSite=strict` impide que el navegador adjunte la cookie de sesión en
+  solicitudes originadas en otro sitio, que es exactamente el vector que un token CSRF
+  mitigaría; la app no sirve contenido embebido en iframes de terceros ni tiene subdominios que
+  requieran `sameSite=lax`, por lo que `strict` no introduce fricción funcional (FR-046,
+  clarificación 2026-07-21).
+- **Alternatives considered**: token anti-CSRF de doble envío (rechazado: redundante dado
+  `sameSite=strict` para el modelo de despliegue de esta app, agrega complejidad no exigida por
+  ningún FR).
+
 ## Unknowns resueltos
 
 Todos los ítems marcados como `NEEDS CLARIFICATION` en el Technical Context de `plan.md` quedan
-resueltos por las decisiones 1 a 11 de este documento. No quedan unknowns pendientes para
+resueltos por las decisiones 1 a 14 de este documento. No quedan unknowns pendientes para
 Phase 1.

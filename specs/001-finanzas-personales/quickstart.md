@@ -95,3 +95,9 @@ cd frontend && pnpm install && pnpm dev   # levanta Next.js en :3000
   en la URL o el body del request → `404`, sin exponer ni modificar el dato ajeno (FR-008); se
   genera un `security_events` de tipo `cross_account_access_denied` (verificar solo a nivel de
   base de datos, nunca expuesto en la UI/API de usuario final, FR-040).
+- Inspeccionar las cabeceras de cualquier respuesta del backend → set base de cabeceras de
+  seguridad HTTP presente (FR-047); la cookie de sesión tiene los atributos `httpOnly`,
+  `secure` y `sameSite=strict` (FR-046).
+- Enviar un `body` con un campo de forma inesperada (por ejemplo, un objeto en vez de texto) a
+  cualquier endpoint de escritura → `400` con el formato de error estándar, sin llegar a tocar
+  la base de datos (FR-048).

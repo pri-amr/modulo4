@@ -12,6 +12,13 @@ no confirmar existencia del recurso ajeno) y genera un `security_events` de tipo
 { "error": { "code": "string", "message": "string", "field": "string | null" } }
 ```
 
+**Cross-cutting (todos los endpoints, FR-046/FR-047/FR-048)**: toda respuesta incluye el set
+base de cabeceras de seguridad HTTP (FR-047, research.md §13); la cookie de sesión usa
+`sameSite=strict` como única protección CSRF (FR-046, research.md §14); todo `body`/`query` se
+valida contra un esquema estricto antes de despachar al bus CQRS, respondiendo `400` con el
+formato de error estándar (`field` indica la ruta del campo inválido) ante cualquier violación
+de esquema (FR-048, research.md §12).
+
 ---
 
 ## Auth (`/auth`)
@@ -76,7 +83,9 @@ Mismo contrato que `/money-sources` (`GET`, `POST` únicamente), reglas FR-013/F
 
 ### `GET /transactions?day=YYYY-MM-DD&month=YYYY-MM&year=YYYY&page=1`
 Filtros mutuamente excluyentes por período (FR-023); `page` con tamaño fijo de 50 (FR-024).
-**200**: `{ "items": [Transaction], "page": number, "pageSize": 50, "hasNextPage": boolean }`.
+Orden por defecto: fecha de transacción descendente, `createdAt` descendente como desempate
+(FR-024). **200**: `{ "items": [Transaction], "page": number, "pageSize": 50, "hasNextPage":
+boolean }`.
 
 ### `POST /transactions`
 **Body**: `{ "type": "income"|"expense", "amount": number (>0, ≤2 decimales), "currency":
@@ -114,9 +123,12 @@ Calculado on-demand (FR-021, FR-022); ver data-model.md "Saldo (derivado)".
 ## Gráficos (`/charts`)
 
 ### `GET /charts/expenses-by-category?from=YYYY-MM-DD&to=YYYY-MM-DD&category=id`
-Sin filtros: gastos del mes en curso (FR-025). Con `from`/`to`: rango elegido (FR-026). Con
-`category`: acota a una categoría (FR-027).
-**200**: `{ "items": [{ "categoryId", "categoryName", "amount", "percentage" }] }`.
+Sin filtros: gastos del mes en curso, calculado en zona horaria de Argentina
+(America/Argentina/Buenos_Aires, UTC-3 fijo, FR-025). Con `from`/`to`: rango elegido (FR-026).
+Con `category`: acota a una categoría (FR-027).
+**200**: `{ "items": [{ "categoryId", "categoryName", "amount", "percentage" }] }`. `percentage`
+redondeado a 1 decimal por categoría, con ajuste en la de mayor monto para que la suma total dé
+exactamente 100% (FR-025).
 
 ---
 
@@ -126,14 +138,16 @@ Sin filtros: gastos del mes en curso (FR-025). Con `from`/`to`: rango elegido (F
 Proxy de dolarapi.com para los 7 tipos requeridos (FR-029). **200**: `[{ "type": "oficial" |
 "blue" | "bolsa" | "cripto" | "tarjeta" | "cclq" | "mayorista", "venta": number }]`.
 **502**: `{ "error": { "code": "QUOTE_SOURCE_UNAVAILABLE", "message": "..." } }` — el frontend
-NUNCA muestra un valor de conversión ante esta respuesta (FR-032, RF30).
+NUNCA muestra un valor de conversión ante esta respuesta (FR-032, RF30); mismo código y
+tratamiento cuando dolarapi.com responde 200 pero sin el tipo de cambio solicitado (FR-030,
+FR-032).
 
 ### `POST /converter/convert`
 **Body**: `{ "amount": number (>0), "direction": "USD_TO_ARS"|"ARS_TO_USD", "rateType": string }`
 **200**: `{ "result": number, "rateUsed": number }`
 **400**: `amount` ≤0 o vacío.
-**502**: mismo contrato de error que `/converter/rates` cuando la fuente falla, no responde, o
-supera el timeout de 5000 ms (FR-032, SC-004).
+**502**: mismo contrato de error que `/converter/rates` cuando la fuente falla, no responde,
+supera el timeout de 5000 ms, o responde sin el tipo de cambio pedido (FR-032, SC-004).
 
 ---
 
