@@ -32,6 +32,11 @@
 - Q: ¿Cómo se evita el registro duplicado de una transacción por doble clic/tap en "guardar"? → A: El sistema deshabilita el control de guardar mientras la operación está en curso.
 - Q: ¿Existe un límite máximo de longitud para el nombre de una fuente de dinero/categoría y para la descripción de una transacción? → A: 60 caracteres para nombre de fuente de dinero o categoría; sin límite máximo para la descripción de la transacción.
 - Q: ¿Qué nivel de accesibilidad (teclado, contraste, lectores de pantalla) se exige en esta versión? → A: Ninguno definido; queda fuera de alcance en esta versión.
+- Q: ¿Con qué regla se redondean los porcentajes del gráfico de gastos por categoría (FR-025) cuando no suman exactamente 100%? → A: Redondeo a 1 decimal por categoría, con ajuste en la categoría de mayor monto para que la suma total dé exactamente 100%.
+- Q: ¿Qué patrón de confirmación visual usa la pantalla de Transacciones tras guardar, editar o eliminar una transacción (Historia 2)? → A: Actualización en línea — el listado se refresca al instante y el formulario se limpia, sin navegar a otra pantalla.
+- Q: Si dolarapi.com responde exitosamente pero sin el tipo de cambio solicitado (FR-030), ¿cómo debe tratarse? → A: Igual que cualquier otro fallo de la fuente: error explícito, sin valor de conversión (mismo tratamiento que FR-032).
+- Q: ¿Cuál es el orden por defecto del listado de transacciones (FR-023, FR-024)? → A: Más reciente primero, por fecha de transacción descendente y `createdAt` descendente como desempate.
+- Q: ¿En qué zona horaria se calculan los límites del "mes en curso" del gráfico de gastos (FR-025)? → A: Zona horaria de Argentina (America/Argentina/Buenos_Aires, UTC-3 fijo, sin horario de verano).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -95,10 +100,12 @@ los datos ingresados — entrega valor de forma independiente de gráficos, filt
 
 1. **Given** un usuario autenticado en el dashboard, **When** completa el formulario de egreso
    con monto, fuente de dinero, moneda, categoría, fecha y descripción válidos y confirma,
-   **Then** la transacción aparece en el listado con esos datos exactos.
+   **Then** la transacción aparece en el listado con esos datos exactos, el listado se
+   actualiza en línea sin navegar a otra pantalla, y el formulario se limpia para una carga
+   siguiente.
 2. **Given** un usuario autenticado en el dashboard, **When** completa el formulario de ingreso
    con datos válidos y confirma, **Then** la transacción aparece en el listado con esos datos
-   exactos.
+   exactos, con la misma actualización en línea sin navegación.
 3. **Given** un usuario completando el formulario de transacción, **When** intenta guardar sin
    completar el monto, la fuente de dinero, la moneda, la categoría, la fecha o la descripción,
    **Then** el sistema impide el guardado y señala cuál campo falta.
@@ -106,9 +113,11 @@ los datos ingresados — entrega valor de forma independiente de gráficos, filt
    igual a cero o negativo, **Then** el sistema impide el guardado y explica que el monto debe
    ser mayor a cero.
 5. **Given** una transacción existente, **When** el usuario la edita y confirma los cambios,
-   **Then** el listado refleja los nuevos valores.
+   **Then** el listado refleja los nuevos valores de forma inmediata y en línea, sin navegar a
+   otra pantalla.
 6. **Given** una transacción existente, **When** el usuario la elimina y confirma la acción en
-   el diálogo de confirmación, **Then** la transacción desaparece del listado.
+   el diálogo de confirmación, **Then** la transacción desaparece del listado de forma
+   inmediata y en línea.
 7. **Given** un usuario que completó correctamente el formulario, **When** el guardado falla
    (por ejemplo, un error de red), **Then** el sistema muestra un mensaje de error y conserva
    los datos ingresados para que pueda reintentar sin volver a escribirlos.
@@ -357,13 +366,19 @@ conversión.
 - **FR-023**: El sistema MUST permitir filtrar el listado de transacciones por día, por mes y
   por año.
 - **FR-024**: El sistema MUST paginar el listado de transacciones mostrando un máximo de 50
-  registros por página y MUST permitir navegar entre páginas sin repetir ni omitir registros.
+  registros por página y MUST permitir navegar entre páginas sin repetir ni omitir registros. El
+  orden por defecto del listado (con o sin filtro aplicado) MUST ser por fecha de transacción
+  descendente (más reciente primero), usando `createdAt` descendente como criterio de desempate
+  entre transacciones de la misma fecha.
 
 **Gráficos**
 
 - **FR-025**: El sistema MUST mostrar, por defecto al ingresar a la sección de gráficos y sin
   filtros aplicados, un gráfico de torta con la distribución porcentual de gastos por categoría
-  del mes en curso.
+  del mes en curso, calculado en la zona horaria de Argentina (America/Argentina/Buenos_Aires,
+  UTC-3 fijo, sin horario de verano). El porcentaje de cada categoría se redondea a 1 decimal;
+  si la suma de los porcentajes redondeados no da exactamente 100%, se ajusta el porcentaje de
+  la categoría de mayor monto para que la suma total sea exactamente 100%.
 - **FR-026**: El sistema MUST permitir filtrar el gráfico de gastos por rango de fechas.
 - **FR-027**: El sistema MUST permitir filtrar el gráfico de gastos por categoría.
 
@@ -378,8 +393,9 @@ conversión.
 - **FR-031**: El sistema MUST mostrar el resultado de la conversión en la moneda destino que
   corresponda a la dirección elegida.
 - **FR-032**: El sistema MUST mostrar un mensaje de error explícito y MUST NOT mostrar ningún
-  valor de conversión cuando la fuente de cotizaciones no responde, responde con error, o supera
-  el tiempo máximo de espera configurado.
+  valor de conversión cuando la fuente de cotizaciones no responde, responde con error, supera
+  el tiempo máximo de espera configurado, o responde exitosamente pero sin el tipo de cambio
+  solicitado (FR-030) — este último caso recibe el mismo tratamiento que los anteriores.
 
 **Seguridad y datos**
 

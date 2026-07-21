@@ -21,15 +21,15 @@ Cada ítem pregunta si el spec está completo, claro, consistente y medible — 
 - [ ] CHK002 - ¿Está especificado un límite máximo de longitud para el nombre de una fuente de dinero, una categoría o la descripción de una transacción? [Gap, Spec §FR-010, §FR-013, §FR-017]
 - [ ] CHK003 - ¿Está definido si existe un tope máximo de monto para una transacción, o el sistema acepta cualquier valor positivo sin límite superior? [Gap, Spec §FR-017]
 - [ ] CHK004 - ¿Está especificado si se permite registrar una transacción con fecha futura? [Gap, Spec §FR-017]
-- [ ] CHK005 - ¿Está definido el criterio de ordenamiento por defecto del listado de transacciones? [Gap, Spec §FR-023, §FR-024]
+- [x] CHK005 - ¿Está definido el criterio de ordenamiento por defecto del listado de transacciones? [Gap, Spec §FR-023, §FR-024]
 - [ ] CHK006 - ¿Están definidos requisitos de cifrado en tránsito, además del cifrado en reposo de FR-034, para los datos financieros? [Gap, Spec §FR-034]
 - [ ] CHK007 - ¿Está especificado cómo se trata el gráfico de gastos (FR-025) cuando el usuario tiene egresos tanto en ARS como en USD dentro del mismo mes? [Gap, Spec §FR-025]
 
 ## Requirement Clarity
 
 - [ ] CHK008 - ¿Aclara el spec si el gráfico de gastos (FR-025) incluye únicamente transacciones de tipo egreso, o también ingresos categorizados? [Ambiguity, Spec §FR-025]
-- [ ] CHK009 - ¿Especifica FR-030 qué debe ocurrir si dolarapi.com responde exitosamente pero sin el campo `venta` esperado para el tipo de cambio elegido? [Ambiguity, Spec §FR-030, §FR-032]
-- [ ] CHK010 - ¿Es "el mes en curso" (FR-025) lo bastante preciso para determinar de forma objetiva sus límites (huso horario, día de corte)? [Clarity, Spec §FR-025]
+- [x] CHK009 - ¿Especifica FR-030 qué debe ocurrir si dolarapi.com responde exitosamente pero sin el campo `venta` esperado para el tipo de cambio elegido? [Ambiguity, Spec §FR-030, §FR-032]
+- [x] CHK010 - ¿Es "el mes en curso" (FR-025) lo bastante preciso para determinar de forma objetiva sus límites (huso horario, día de corte)? [Clarity, Spec §FR-025]
 - [ ] CHK011 - ¿Aclara el spec si el saldo por fuente y moneda (FR-021) se recalcula en tiempo real o se cachea, en relación con "reflejar los nuevos valores... en los saldos afectados" de FR-018? [Ambiguity, Spec §FR-018, §FR-021]
 - [ ] CHK012 - ¿Define el spec el valor concreto de "tiempo máximo de espera configurado" en FR-032, más allá del máximo de 5 segundos mencionado en SC-004? [Clarity, Spec §FR-032, §SC-004]
 
@@ -43,7 +43,7 @@ Cada ítem pregunta si el spec está completo, claro, consistente y medible — 
 
 - [ ] CHK016 - ¿Existe un escenario de aceptación que verifique el cálculo del saldo consolidado (FR-022) cuando una fuente de dinero tiene transacciones en ambas monedas (ARS y USD)? [Coverage, Gap, Spec §FR-022]
 - [ ] CHK017 - ¿Existe un escenario de aceptación para el límite exacto de paginación (transacción número 50 frente a 51) descripto en FR-024? [Measurability, Spec §FR-024]
-- [ ] CHK018 - ¿Puede verificarse objetivamente "distribución porcentual de gastos por categoría" (FR-025) sin que el spec defina el redondeo o el tratamiento de porcentajes que no suman exactamente 100%? [Measurability, Spec §FR-025]
+- [x] CHK018 - ¿Puede verificarse objetivamente "distribución porcentual de gastos por categoría" (FR-025) sin que el spec defina el redondeo o el tratamiento de porcentajes que no suman exactamente 100%? [Measurability, Spec §FR-025]
 - [ ] CHK019 - ¿Existe un escenario de aceptación que cubra la selección de cada uno de los siete tipos de cambio de FR-029, o solo se ilustra el caso general? [Coverage, Spec §FR-029, §User Story 6]
 
 ## Scenario Coverage

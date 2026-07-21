@@ -37,7 +37,7 @@ Cada ítem pregunta si el spec está completo, claro, consistente y medible — 
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK014 - ¿Puede verificarse "la transacción aparece en el listado con esos datos exactos" (Historia 2, escenarios 1-2) sin que el spec defina el patrón de confirmación en pantalla (redirección, actualización en línea, aviso temporal)? [Measurability, Spec §User Story 2]
+- [x] CHK014 - ¿Puede verificarse "la transacción aparece en el listado con esos datos exactos" (Historia 2, escenarios 1-2) sin que el spec defina el patrón de confirmación en pantalla (redirección, actualización en línea, aviso temporal)? [Measurability, Spec §User Story 2]
 - [ ] CHK015 - ¿Existe un escenario de aceptación para el estado vacío de una cuenta recién creada, antes de registrar cualquier transacción? [Coverage, Gap]
 - [ ] CHK016 - ¿Existe un escenario de aceptación que valide alguna pantalla con densidad de datos (listado o gráfico) específicamente en el ancho mínimo soportado de 320px? [Coverage, Gap, Spec §SC-006]
 
