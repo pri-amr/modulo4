@@ -86,6 +86,8 @@ cd frontend && pnpm install && pnpm dev   # levanta Next.js en :3000
 
 ## Validación no funcional
 
+- Con un usuario ya autenticado en el dashboard, cronometrar desde que abre el formulario de
+  transacción hasta que la transacción confirmada aparece en el listado → < 30s (SC-002).
 - Cargar cualquier página en una conexión throttled a 10 Mbps → < 2s (SC-003).
 - Medir el tiempo entre pedir una conversión y ver el resultado o el error → ≤ 5s (SC-004).
 - Reducir el viewport a 320px de ancho en cada sección → sin scroll horizontal (SC-006).

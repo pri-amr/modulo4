@@ -52,8 +52,8 @@ error explícito en ≤ 5s (SC-004, timeout research.md §9); alta de transacci�
 **Constraints**: hasheo de contraseña equivalente/superior a OWASP (FR-033); cifrado en reposo
 de datos financieros (FR-034); sin valor de conversión ante fallo/timeout de dolarapi.com
 (FR-032, RF30); sesión de 1 día con logout inmediato (FR-037, FR-041); bloqueo de 15 min tras 5
-intentos fallidos, por cuenta (FR-036); UI sin scroll horizontal desde 320px (SC-006); 46
-requisitos funcionales (FR-001 a FR-046) sin detalles de implementación adicionales fuera de los
+intentos fallidos, por cuenta (FR-036); UI sin scroll horizontal desde 320px (SC-006); 45
+requisitos funcionales (FR-001 a FR-045) sin detalles de implementación adicionales fuera de los
 ya fijados por AGENTS.md/constitución.
 
 **Scale/Scope**: una cuenta = un usuario, sin cuentas compartidas (Assumptions); historial de
@@ -151,7 +151,7 @@ usuario final. Los seis chequeos de la tabla se mantienen en **PASS/N/A** sin ca
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/001-finanzas-personales/
 ├── plan.md              # This file (/speckit-plan command output)
 ├── research.md          # Phase 0 output (/speckit-plan command)
 ├── data-model.md        # Phase 1 output (/speckit-plan command)
@@ -169,6 +169,8 @@ frontend/
 │   ├── components/              # UI a medida (sin librería de componentes), por funcionalidad
 │   │   ├── shared/               # componentes verdaderamente compartidos (botón, input, modal)
 │   │   ├── auth/
+│   │   ├── categories/
+│   │   ├── money-sources/
 │   │   ├── transactions/
 │   │   ├── balances/
 │   │   ├── charts/
