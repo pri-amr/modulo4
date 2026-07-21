@@ -27,6 +27,11 @@
 - Q: El bloqueo temporal de 15 minutos tras 5 intentos fallidos (FR-036), ¿aplica por cuenta o también considera el origen/IP del intento? → A: Solo por cuenta, independientemente del dispositivo u origen.
 - Q: ¿Qué reinicia a cero el contador de intentos fallidos consecutivos del bloqueo? → A: Tanto una autenticación exitosa como la expiración del período de bloqueo de 15 minutos.
 - Q: El nombre/identificador de una passkey en el listado, ¿lo asigna el sistema automáticamente o lo define el usuario al registrarla? → A: Lo define el usuario al momento de registrarla.
+- Q: ¿Con qué precisión decimal se registran los montos de una transacción? → A: Hasta 2 decimales (estándar de centavos).
+- Q: ¿Se permite registrar una transacción con fecha futura? → A: No, solo fecha de hoy o pasada; una fecha futura se rechaza como inválida.
+- Q: ¿Cómo se evita el registro duplicado de una transacción por doble clic/tap en "guardar"? → A: El sistema deshabilita el control de guardar mientras la operación está en curso.
+- Q: ¿Existe un límite máximo de longitud para el nombre de una fuente de dinero/categoría y para la descripción de una transacción? → A: 60 caracteres para nombre de fuente de dinero o categoría; sin límite máximo para la descripción de la transacción.
+- Q: ¿Qué nivel de accesibilidad (teclado, contraste, lectores de pantalla) se exige en esta versión? → A: Ninguno definido; queda fuera de alcance en esta versión.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -302,13 +307,13 @@ conversión.
 - **FR-009**: El sistema MUST ofrecer, al crear la cuenta, una lista predefinida de fuentes de
   dinero: Santander, BNA, Macro, Lemon, Brubank y Efectivo.
 - **FR-010**: El sistema MUST permitir al usuario dar de alta una fuente de dinero propia con un
-  nombre elegido por él.
+  nombre elegido por él, de hasta 60 caracteres.
 - **FR-011**: El sistema MUST impedir el alta de una fuente de dinero cuyo nombre coincida
   exactamente con uno ya existente en esa cuenta.
 - **FR-012**: El sistema MUST ofrecer, al crear la cuenta, una lista predefinida de categorías:
   comida, transporte, sueldo y freelance.
 - **FR-013**: El sistema MUST permitir al usuario dar de alta una categoría propia con un nombre
-  elegido por él.
+  elegido por él, de hasta 60 caracteres.
 - **FR-014**: El sistema MUST impedir el alta de una categoría cuyo nombre coincida exactamente
   con una ya existente en esa cuenta.
 - **FR-015**: El sistema MUST NOT permitir editar ni eliminar una fuente de dinero o categoría
@@ -320,8 +325,13 @@ conversión.
   ingreso.
 - **FR-017**: El sistema MUST requerir, para guardar una transacción, un monto numérico mayor a
   cero, una fuente de dinero existente, una moneda (ARS o USD), una categoría existente, una
-  fecha y una descripción de texto libre; MUST impedir el guardado si falta alguno de estos
-  datos y MUST indicar cuál falta.
+  fecha y una descripción de texto libre sin límite máximo de longitud; MUST impedir el
+  guardado si falta alguno de estos datos y MUST indicar cuál falta.
+- **FR-043**: El sistema MUST aceptar montos de transacción con hasta 2 decimales (precisión de
+  centavos) y MUST redondear o rechazar (de forma consistente) cualquier valor con mayor
+  precisión ingresado.
+- **FR-044**: El sistema MUST rechazar como inválida cualquier fecha de transacción posterior a
+  la fecha actual; solo se permite fecha de hoy o anterior.
 - **FR-018**: El sistema MUST permitir editar una transacción existente y reflejar los nuevos
   valores en el listado y en los saldos afectados.
 - **FR-019**: El sistema MUST permitir eliminar una transacción existente, exigiendo
@@ -329,6 +339,9 @@ conversión.
 - **FR-020**: El sistema MUST mostrar un mensaje de error y MUST conservar los datos ya
   ingresados por el usuario si el guardado de una transacción falla, para permitir reintentar
   sin volver a completarlos.
+- **FR-045**: El sistema MUST deshabilitar el control de guardar mientras una operación de alta
+  o edición de transacción está en curso, para impedir el envío duplicado por doble clic o
+  doble tap.
 
 **Saldos**
 
@@ -436,6 +449,8 @@ conversión.
   toda transacción se carga manualmente.
 - No hay notificaciones push, por email ni SMS en esta versión.
 - No hay exportación de datos a CSV ni PDF, ni aplicación móvil nativa, en esta versión.
+- No se definen requisitos formales de accesibilidad (navegación por teclado, lectores de
+  pantalla, contraste WCAG) en esta versión; queda como brecha conocida para una versión futura.
 - No se gestionan inversiones, plazos fijos ni criptoactivos como activos propios de la cuenta
   (distinto del uso de "cripto" como uno de los tipos de cambio disponibles en el conversor).
 - Las fuentes de dinero y categorías, una vez creadas, no pueden editarse ni eliminarse, para no
