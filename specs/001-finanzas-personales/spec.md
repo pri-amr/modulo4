@@ -8,6 +8,26 @@
 
 **Input**: User description: "Generá el spec a partir del @PRD.md" — PRD-001: Aplicación Web de Finanzas Personales, que centraliza el control de ingresos y egresos en múltiples bancos y efectivo (ARS/USD), con acceso seguro mediante passkeys o contraseña.
 
+## Clarifications
+
+### Session 2026-07-20
+
+- Q: ¿El sistema debe limitar o bloquear intentos repetidos de autenticación con contraseña incorrecta? → A: Bloqueo temporal tras intentos fallidos consecutivos (5 intentos → bloqueo de 15 minutos).
+- Q: ¿Por cuánto tiempo permanece autenticado un usuario antes de requerir volver a autenticarse? → A: La sesión dura 1 día desde el inicio de sesión.
+- Q: ¿El sistema debe registrar (log/auditoría) eventos de seguridad como logins fallidos, bloqueos de cuenta e intentos de acceso a datos de otra cuenta? → A: Sí, registrar internamente (login fallido, bloqueo, acceso cruzado denegado).
+- Q: Si dos ediciones a la misma transacción llegan casi al mismo tiempo (misma cuenta, dos pestañas/dispositivos), ¿el sistema debe avisar del conflicto o aplicar la última escritura? → A: Última escritura gana, sin aviso de conflicto.
+- Q: ¿El sistema debe ofrecer un flujo de recuperación de contraseña olvidada en esta versión? → A: No, fuera de alcance en esta versión (igual que la recuperación de passkey).
+- Q: ¿Por cuánto tiempo deben conservarse los registros de eventos de seguridad antes de poder eliminarse o rotarse? → A: 30 días.
+- Q: ¿Debe el usuario final tener algún acceso (lectura, edición o borrado) a los registros de eventos de seguridad que su propia cuenta generó? → A: Ningún acceso: el usuario final no puede ver, editar ni borrar sus propios registros de seguridad.
+
+### Session 2026-07-21
+
+- Q: ¿Debe existir una acción explícita de "cerrar sesión" en la aplicación, distinta de la expiración automática al cabo de 1 día? → A: Sí, un control visible de "cerrar sesión" que invalida la sesión de inmediato.
+- Q: ¿Debe el sistema exigir requisitos mínimos de complejidad para la contraseña, más allá del hasheo al guardarla? → A: Sí, un mínimo de 4 caracteres solamente, sin otras reglas de complejidad.
+- Q: El bloqueo temporal de 15 minutos tras 5 intentos fallidos (FR-036), ¿aplica por cuenta o también considera el origen/IP del intento? → A: Solo por cuenta, independientemente del dispositivo u origen.
+- Q: ¿Qué reinicia a cero el contador de intentos fallidos consecutivos del bloqueo? → A: Tanto una autenticación exitosa como la expiración del período de bloqueo de 15 minutos.
+- Q: El nombre/identificador de una passkey en el listado, ¿lo asigna el sistema automáticamente o lo define el usuario al registrarla? → A: Lo define el usuario al momento de registrarla.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1)
@@ -33,10 +53,22 @@ entregando valor por sí sola (acceso seguro) sin depender de ninguna otra histo
    dispositivo rechaza la verificación, o ingresa credenciales incorrectas, **Then** el sistema
    muestra un mensaje de error, ofrece un control para reintentar, y no lo redirige al dashboard.
 4. **Given** un usuario autenticado con al menos una passkey, **When** registra una passkey
-   adicional desde otro dispositivo, **Then** la nueva passkey aparece en su listado y sirve
-   para autenticarse en sesiones futuras.
+   adicional desde otro dispositivo e ingresa un nombre para identificarla, **Then** la nueva
+   passkey aparece en su listado con ese nombre y sirve para autenticarse en sesiones futuras.
 5. **Given** un usuario con exactamente una passkey registrada, **When** intenta eliminarla,
    **Then** el sistema bloquea la operación y explica que debe quedar al menos una activa.
+6. **Given** un usuario cuyo método elegido es usuario/contraseña, **When** falla la
+   autenticación 5 veces consecutivas, **Then** el sistema bloquea temporalmente nuevos
+   intentos con ese usuario durante 15 minutos y lo informa explícitamente.
+7. **Given** un usuario que se autenticó exitosamente, **When** transcurre 1 día desde ese
+   inicio de sesión, **Then** el sistema deja de considerarlo autenticado y le exige volver a
+   completar el flujo de autenticación para continuar usando la aplicación.
+8. **Given** un usuario autenticado, **When** hace clic en el control de "cerrar sesión",
+   **Then** el sistema invalida la sesión de inmediato y lo redirige a la pantalla de acceso,
+   exigiéndole volver a autenticarse para su próximo uso de la aplicación.
+9. **Given** un usuario registrándose con el método usuario/contraseña, **When** ingresa una
+   contraseña de menos de 4 caracteres, **Then** el sistema impide el registro y explica el
+   largo mínimo requerido.
 
 ---
 
@@ -192,9 +224,10 @@ conversión.
 
 ### Edge Cases
 
-- ¿Qué sucede si dos transacciones se editan o eliminan casi simultáneamente desde dos
-  pestañas/dispositivos de la misma cuenta? El saldo final debe reflejar el último estado
-  guardado sin duplicar ni perder movimientos.
+- Si dos ediciones a la misma transacción llegan casi simultáneamente desde dos
+  pestañas/dispositivos de la misma cuenta, gana la última escritura procesada, sin aviso de
+  conflicto al usuario: el estado guardado es el de la operación que se completó al final, sin
+  duplicar ni perder movimientos.
 - ¿Qué pasa si un usuario intenta acceder, editar o eliminar una transacción, fuente de dinero,
   categoría o passkey que pertenece a otra cuenta (por ejemplo, manipulando un identificador en
   la URL o en una petición)? El sistema no debe exponer ni modificar datos de otra cuenta.
@@ -213,6 +246,9 @@ conversión.
   inválido.
 - ¿Qué pasa si el dispositivo del usuario no soporta WebAuthn/passkeys? Debe poder registrarse
   y autenticarse igualmente eligiendo el método de usuario y contraseña.
+- ¿Qué pasa si un usuario cuyo método es usuario/contraseña olvida su contraseña? No hay flujo
+  de recuperación de contraseña en esta versión; el usuario queda sin poder acceder a la cuenta
+  hasta que se implemente un flujo de recuperación en una versión futura.
 
 ## Requirements *(mandatory)*
 
@@ -229,13 +265,37 @@ conversión.
 - **FR-004**: El sistema MUST mostrar un mensaje de error y un control para reintentar cuando la
   autenticación falla o es cancelada, sin importar el método.
 - **FR-005**: El sistema MUST permitir registrar más de una passkey por cuenta.
-- **FR-006**: El sistema MUST listar las passkeys registradas con un nombre o identificador de
-  dispositivo por cada una.
+- **FR-006**: El sistema MUST listar las passkeys registradas, cada una con un nombre que el
+  usuario define al momento de registrarla.
 - **FR-007**: El sistema MUST permitir eliminar una passkey solo si, tras la eliminación, queda
   al menos una passkey activa en la cuenta; MUST bloquear la eliminación de la última passkey.
 - **FR-008**: El sistema MUST verificar en cada operación que el usuario autenticado sea el
   propietario de los datos solicitados (transacciones, saldos, fuentes de dinero, categorías,
   passkeys) y MUST negar el acceso a datos de otra cuenta.
+- **FR-036**: El sistema MUST bloquear temporalmente los intentos de autenticación con
+  usuario/contraseña de una cuenta durante 15 minutos después de 5 intentos fallidos
+  consecutivos, e informar al usuario que la cuenta está temporalmente bloqueada. El bloqueo
+  MUST determinarse exclusivamente por cuenta (usuario), independientemente del dispositivo o
+  la dirección IP de origen de los intentos. El contador de intentos fallidos consecutivos
+  MUST reiniciarse a cero tanto ante una autenticación exitosa como al cumplirse el período de
+  bloqueo de 15 minutos.
+- **FR-037**: El sistema MUST mantener la sesión de un usuario autenticado activa durante 1 día
+  desde el inicio de sesión, y MUST exigir volver a autenticarse una vez transcurrido ese plazo.
+- **FR-038**: El sistema MUST registrar internamente los eventos de seguridad relevantes
+  (intentos de autenticación fallidos, bloqueos temporales de cuenta, e intentos denegados de
+  acceso a datos de otra cuenta) con fecha, hora y cuenta involucrada, para permitir su revisión
+  posterior.
+- **FR-039**: El sistema MUST conservar cada registro de evento de seguridad durante 30 días
+  desde su creación, y MUST permitir su eliminación o rotación una vez transcurrido ese plazo.
+- **FR-040**: El sistema MUST NOT exponer a la cuenta de usuario final ninguna vía para leer,
+  editar o borrar sus propios registros de eventos de seguridad; estos registros quedan
+  completamente fuera del alcance de la interfaz y la API del usuario final.
+- **FR-041**: El sistema MUST proveer un control de "cerrar sesión" accesible por el usuario
+  autenticado en cualquier momento, y MUST invalidar la sesión activa de forma inmediata al
+  accionarlo, sin esperar el vencimiento automático de FR-037.
+- **FR-042**: El sistema MUST exigir una contraseña de al menos 4 caracteres para el método
+  usuario/contraseña, sin imponer otros requisitos de complejidad (combinación obligatoria de
+  mayúsculas, números o símbolos).
 
 **Fuentes de dinero y categorías**
 
@@ -322,8 +382,8 @@ conversión.
 - **Usuario**: persona dueña de una cuenta; tiene un único método de autenticación elegido en
   el registro (passkey o usuario/contraseña) y es dueña exclusiva de todos sus datos.
 - **Credencial de acceso**: representa el método de autenticación de un usuario; puede ser una o
-  más passkeys (cada una con un identificador/nombre de dispositivo) o un par usuario/contraseña
-  (nunca ambos para la misma cuenta).
+  más passkeys (cada una con un nombre definido por el usuario al registrarla) o un par
+  usuario/contraseña de al menos 4 caracteres (nunca ambos para la misma cuenta).
 - **Fuente de dinero**: banco o medio (por ejemplo Santander, BNA, Macro, Lemon, Brubank,
   Efectivo) donde el usuario mantiene dinero; predefinida o dada de alta por el usuario; nombre
   único por cuenta; no editable ni eliminable una vez creada.
@@ -337,6 +397,10 @@ conversión.
 - **Cotización**: valor de cambio USD/ARS para un tipo específico (oficial, blue, bolsa, cripto,
   tarjeta, contado con liqui, mayorista), obtenido de una fuente externa en el momento de cada
   conversión; no se almacena de forma persistente.
+- **Registro de evento de seguridad**: entrada interna (no visible en la UI del usuario final)
+  que documenta un evento de seguridad relevante — tipo de evento (login fallido, bloqueo
+  temporal, acceso cruzado denegado), cuenta involucrada y fecha/hora — para permitir revisión
+  posterior; se conserva 30 días desde su creación y luego puede eliminarse o rotarse.
 
 ## Success Criteria *(mandatory)*
 
@@ -379,6 +443,8 @@ conversión.
   nombres exactos.
 - No existe flujo de recuperación de cuenta sin passkey en esta versión; la mitigación
   disponible es que el usuario registre passkeys en varios dispositivos.
+- No existe flujo de recuperación de contraseña olvidada en esta versión, de forma simétrica a
+  la ausencia de recuperación de cuenta sin passkey; ambas quedan para una versión futura.
 - La fuente de cotizaciones de tipos de cambio es un servicio externo de terceros; su
   disponibilidad y estructura de respuesta no están garantizadas por este equipo, por lo que el
   sistema debe seguir siendo funcional (salvo la sección de conversión) cuando ese servicio
