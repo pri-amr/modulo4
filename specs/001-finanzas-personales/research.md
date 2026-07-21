@@ -1,0 +1,137 @@
+# Phase 0 Research: Finanzas Personales (Multi-banco, ARS/USD)
+
+**Input**: Technical Context (unknowns) de `plan.md`, spec.md, AGENTS.md, constitution.md
+
+## 1. Librería WebAuthn/Passkeys (backend)
+
+- **Decision**: `@simplewebauthn/server` (backend) + `@simplewebauthn/browser` (frontend).
+- **Rationale**: es la implementación de referencia del W3C WebAuthn más usada en el ecosistema
+  Node/Express, mantiene compatibilidad activa con navegadores, no impone un framework
+  específico (encaja con Express puro) y separa limpiamente ceremonia de registro/login de la
+  persistencia de credenciales, lo que facilita mapearla al módulo `auth` en DDD.
+- **Alternatives considered**: `passport-fido2` (menos mantenida, atada a Passport, que no está
+  en el stack); implementación manual del protocolo WebAuthn (alto riesgo de errores de
+  seguridad en una app financiera, rechazada).
+
+## 2. Hasheo de contraseña (FR-033, RF033)
+
+- **Decision**: Argon2id vía el paquete `argon2`, con parámetros mínimos alineados a la
+  recomendación OWASP vigente (m≈19-64 MiB, t≥2, p=1, ajustables por variable de entorno).
+- **Rationale**: OWASP Password Storage Cheat Sheet recomienda Argon2id como primera opción
+  quo un algoritmo "equivalente o superior" (FR-033); resistente a ataques GPU/ASIC.
+- **Alternatives considered**: bcrypt (aceptable pero con límite de 72 bytes de entrada y sin
+  resistencia configurable a memoria, inferior a Argon2id); scrypt (viable pero con soporte de
+  librerías Node menos maduro que `argon2`).
+
+## 3. Sesión compartida entre Next.js (next-auth) y backend Express separado
+
+- **Decision**: el backend Express emite y valida su propio token de sesión firmado (JWT,
+  vencimiento a 1 día por FR-037) en una cookie `httpOnly`/`secure`/`sameSite=strict`; next-auth
+  en el frontend se configura con un Credentials Provider / provider custom que delega la
+  verificación (contraseña o ceremonia WebAuthn) al backend vía `services/handleRequest.ts`, y
+  guarda el JWT emitido por el backend dentro de la sesión de next-auth (estrategia `jwt`) para
+  reenviarlo en cada llamada posterior.
+- **Rationale**: mantiene al backend como única fuente de verdad de autenticación/autorización
+  (Principio III), evita duplicar lógica de expiración/bloqueo en dos sistemas, y respeta que
+  frontend y backend son proyectos separados (AGENTS.md) sin state compartido en memoria.
+- **Alternatives considered**: `express-session` con store en MongoDB compartido por both apps
+  (rechazado: acopla el deploy de frontend y backend a la misma base de sesiones y complica el
+  logout inmediato de FR-041); delegar toda la sesión a next-auth sin validación en el backend
+  (rechazado: el backend no podría aplicar el bloqueo de FR-036 de forma confiable).
+
+## 4. Cifrado en reposo de datos financieros (FR-034)
+
+- **Decision**: cifrado en reposo a nivel de almacenamiento/volumen de MongoDB (encrypted
+  storage engine si es self-hosted, o cifrado gestionado por el proveedor si es managed),
+  documentado como cumplimiento de FR-034 sin agregar cifrado a nivel de campo en la aplicación.
+- **Rationale**: el spec exige "cifrados en reposo" sin pedir garantías adicionales de cifrado
+  por campo o de que ni el propio operador de la base pueda leer los datos; el cifrado a nivel
+  de almacenamiento cumple el requisito con la menor complejidad operativa.
+- **Alternatives considered**: MongoDB Client-Side Field Level Encryption (CSFLE) por campo
+  (rechazado por ahora: agrega gestión de claves y complejidad no exigida explícitamente por
+  ningún FR; queda como mejora futura si compliance lo requiere).
+
+## 5. Registro y retención de eventos de seguridad (FR-038, FR-039)
+
+- **Decision**: colección `security_events` en MongoDB con índice TTL (`expireAfterSeconds`)
+  sobre el campo `createdAt`, configurado a 30 días.
+- **Rationale**: MongoDB borra automáticamente los documentos vencidos sin necesidad de un job
+  de limpieza adicional, cumpliendo FR-039 ("MUST permitir su eliminación o rotación") de forma
+  nativa y sin nueva infraestructura (no hay cron en el stack declarado).
+- **Alternatives considered**: rotación manual vía cron job (rechazada: complejidad operativa
+  extra sin beneficio, dado que TTL index resuelve el caso exacto).
+
+## 6. Bloqueo temporal por intentos fallidos (FR-036)
+
+- **Decision**: campos `failedLoginAttempts` (int) y `lockedUntil` (fecha, nullable) en el
+  documento de credencial del usuario; el comando de login (CQRS write side) incrementa el
+  contador en cada fallo, fija `lockedUntil = now + 15min` al llegar a 5, y ambos se resetean a
+  su estado inicial en un login exitoso o cuando `lockedUntil` ya venció.
+- **Rationale**: mapea 1:1 con FR-036 (reinicio por éxito o expiración del período) sin
+  necesitar un almacén externo (Redis); el volumen de un único usuario por cuenta hace
+  innecesario un mecanismo distribuido de rate limiting.
+- **Alternatives considered**: Redis con TTL para el contador (rechazado: infraestructura
+  adicional no justificada para el volumen de la app; MongoDB ya es la única base declarada).
+
+## 7. Librería de gráficos (FR-025 a FR-027)
+
+- **Decision**: `recharts` en el frontend.
+- **Rationale**: componentes React declarativos (encaja con Next.js/React), soporte nativo de
+  gráfico de torta con porcentajes, tree-shakeable, y estilable con Tailwind sin CSS adicional
+  pesado; comunidad y mantenimiento activos.
+- **Alternatives considered**: `chart.js` + `react-chartjs-2` (requiere más configuración manual
+  para responsive a 320px); `victory` (bundle más pesado sin beneficio adicional para un único
+  gráfico de torta).
+
+## 8. Integración con dolarapi.com (FR-028 a FR-032)
+
+- **Decision**: consumir `GET https://dolarapi.com/v1/dolares` (lista de tipos de cambio, cada
+  uno con `casa`, `compra`, `venta`) desde el backend (módulo `converter`), con `axios` y un
+  timeout explícito, mapeando los 7 tipos requeridos (oficial, blue, bolsa, cripto, tarjeta,
+  contado con liqui, mayorista) a las `casa` correspondientes de la API.
+- **Rationale**: FR-030 exige el valor de `venta`; consumir la API desde el backend (no desde el
+  navegador) evita exponer la URL de terceros directamente al cliente y centraliza el manejo de
+  timeout/error exigido por FR-032 en un único punto, reutilizable también si se agrega caching
+  a futuro.
+- **Alternatives considered**: llamar a dolarapi.com directamente desde el frontend (rechazado:
+  duplicaría el manejo de error/timeout en cliente y servidor, y complicaría respetar el
+  Principio V — tests de frontend sin backend real — al requerir mockear un dominio externo
+  también en el cliente).
+
+## 9. Timeout de la consulta de cotización (FR-032, SC-004)
+
+- **Decision**: timeout de 5000 ms en la llamada a dolarapi.com, igual al límite de SC-004.
+- **Rationale**: si dolarapi.com no responde antes de ese límite, no tiene sentido seguir
+  esperando: SC-004 ya exige informar error a los 5s como máximo.
+- **Alternatives considered**: ninguna — el valor surge directamente de un criterio de éxito ya
+  medible del spec.
+
+## 10. Patrón CQRS sobre Express (sin framework adicional)
+
+- **Decision**: bus de comandos/queries in-process minimalista (mapa `tipo → handler`) dentro de
+  cada módulo DDD; los controladores Express (`interface/`) construyen un Command o Query y lo
+  despachan al handler correspondiente en `application/commands` o `application/queries`.
+- **Rationale**: AGENTS.md fija Express (no NestJS ni otro framework con CQRS incorporado);
+  un bus in-process cubre la separación write/read exigida sin la complejidad operativa de un
+  message broker, apropiada para una app de un único proceso/instancia.
+- **Alternatives considered**: NestJS con su módulo `@nestjs/cqrs` (rechazado: cambia el stack
+  declarado en AGENTS.md); mensajería asíncrona vía RabbitMQ/Kafka (rechazado: sobre-ingeniería,
+  no hay ningún requisito de procesamiento asíncrono o multi-instancia en el spec).
+
+## 11. Testing HTTP (mocks de backend y de dolarapi.com)
+
+- **Decision**: `supertest` para tests de integración de endpoints Express; `nock` para mockear
+  llamadas salientes a dolarapi.com en tests de backend; `@testing-library/react` + mocks de
+  `services/handleRequest.ts` (Principio V) para tests de frontend.
+- **Rationale**: son las herramientas estándar de facto sobre Jest para cada capa, evitando
+  llamadas reales a red en cualquier test (Principio V, y buena práctica equivalente en backend
+  para no depender de que dolarapi.com esté arriba durante CI).
+- **Alternatives considered**: MSW (Mock Service Worker) como alternativa a `nock` — válida,
+  pero `nock` es más directo para tests puramente backend sin necesidad de interceptar en el
+  navegador.
+
+## Unknowns resueltos
+
+Todos los ítems marcados como `NEEDS CLARIFICATION` en el Technical Context de `plan.md` quedan
+resueltos por las decisiones 1 a 11 de este documento. No quedan unknowns pendientes para
+Phase 1.

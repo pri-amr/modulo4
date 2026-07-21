@@ -1,0 +1,95 @@
+# Quickstart: Validación de Finanzas Personales
+
+**Propósito**: escenarios ejecutables para comprobar de punta a punta que la implementación
+cumple las Historias de Usuario del spec. No duplica contratos ni modelo de datos — ver
+`contracts/api.md` y `data-model.md` para el detalle de cada endpoint/entidad.
+
+## Prerrequisitos
+
+- Node.js v24 LTS, pnpm instalado.
+- MongoDB corriendo localmente (o `MONGODB_URI` apuntando a una instancia accesible).
+- Variables de entorno configuradas (ver `.env.example` en `backend/` y `frontend/`; ningún
+  secreto real committeado, Principio IV): `MONGODB_URI`, `SESSION_JWT_SECRET`,
+  `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `DOLARAPI_BASE_URL`.
+
+## Setup
+
+```bash
+cd backend && pnpm install && pnpm dev    # levanta la API en :4000 (o el puerto configurado)
+cd frontend && pnpm install && pnpm dev   # levanta Next.js en :3000
+```
+
+## Escenario 1 — Registro y acceso exclusivo por método elegido (Historia 1)
+
+1. Ir a `/registro`, elegir "usuario y contraseña", completar con contraseña de 3 caracteres →
+   **esperado**: bloqueo de alta, mensaje de largo mínimo (FR-042).
+2. Repetir con contraseña de 4+ caracteres → **esperado**: cuenta creada, redirección a
+   `/dashboard` (FR-003).
+3. Cerrar sesión (control visible) → **esperado**: sesión invalidada de inmediato, vuelta a
+   pantalla de acceso (FR-041).
+4. Intentar acceder a esa cuenta vía el flujo de passkey → **esperado**: rechazado (FR-002).
+5. Fallar el login por contraseña 5 veces seguidas → **esperado**: bloqueo temporal informado
+   (FR-036); reintentar antes de 15 minutos sigue bloqueado; después de 15 minutos o con
+   contraseña correcta, el contador se resetea.
+6. Registrar una segunda cuenta con "passkey", agregar una segunda passkey desde otro
+   navegador/perfil con un nombre elegido → **esperado**: ambas listadas con su nombre (FR-006).
+7. Intentar borrar la única passkey restante en una cuenta con una sola → **esperado**: rechazo
+   explícito (FR-007).
+
+## Escenario 2 — Alta, edición y borrado de transacciones (Historia 2)
+
+1. Autenticado, completar el formulario de egreso con todos los campos válidos → aparece en el
+   listado con esos datos exactos (FR-016, FR-017).
+2. Repetir dejando la descripción vacía → guardado bloqueado, se señala el campo faltante.
+3. Ingresar monto `-5` → bloqueado, mensaje de monto > 0.
+4. Ingresar monto con 3 decimales (`10.999`) → verificar el comportamiento de redondeo/rechazo
+   consistente definido (FR-043).
+5. Ingresar una fecha futura → bloqueado (FR-044).
+6. Editar una transacción existente → el listado y el saldo de la fuente afectada reflejan el
+   nuevo valor (FR-018, FR-021).
+7. Eliminarla confirmando el diálogo → desaparece del listado (FR-019).
+8. Hacer doble clic rápido en "Guardar" al crear una transacción → verificar que no se crean dos
+   registros (FR-045).
+9. Dar de alta una fuente de dinero con un nombre ya existente → rechazado (FR-011).
+
+## Escenario 3 — Saldos por fuente y consolidados (Historia 3)
+
+1. Cargar ingresos y egresos en al menos dos fuentes y ambas monedas (ARS y USD).
+2. Ir a la vista de saldos → el saldo por fuente/moneda coincide con ingresos−egresos de esa
+   combinación exacta (FR-021, SC-007); el consolidado ARS y el consolidado USD suman solo sus
+   propias transacciones (FR-022).
+
+## Escenario 4 — Filtros y paginación (Historia 4)
+
+1. Cargar más de 50 transacciones en distintos días/meses/años.
+2. Filtrar por un día específico → solo esas transacciones (FR-023).
+3. Sin filtro, primera página → 50 resultados; página siguiente → el resto sin repetir ni omitir
+   (FR-024).
+
+## Escenario 5 — Gráficos de gastos (Historia 5)
+
+1. Con gastos en 2+ categorías del mes en curso, entrar a la sección de gráficos sin filtros →
+   torta con distribución porcentual (FR-025).
+2. Filtrar por rango de fechas → solo esos gastos (FR-026).
+3. Filtrar por categoría → solo esa categoría (FR-027).
+
+## Escenario 6 — Conversor USD/ARS (Historia 6)
+
+1. Entrar a la sección de conversión con dolarapi.com disponible → campo de monto, selector de
+   dirección, resultado (FR-028).
+2. Elegir "oficial", dirección USD→ARS, ingresar 100 → resultado usando el `venta` oficial
+   vigente (FR-030, FR-031).
+3. Repetir para cada uno de los 7 tipos de cambio (FR-029).
+4. Simular caída de dolarapi.com (cortar red o apuntar `DOLARAPI_BASE_URL` a un host inválido) →
+   mensaje de error explícito, ningún valor de conversión mostrado (FR-032, RF30); el resto de
+   la app (transacciones, saldos, gráficos) sigue funcionando (FR-035).
+
+## Validación no funcional
+
+- Cargar cualquier página en una conexión throttled a 10 Mbps → < 2s (SC-003).
+- Medir el tiempo entre pedir una conversión y ver el resultado o el error → ≤ 5s (SC-004).
+- Reducir el viewport a 320px de ancho en cada sección → sin scroll horizontal (SC-006).
+- Intentar acceder a una transacción/fuente/categoría/passkey de otra cuenta manipulando un id
+  en la URL o el body del request → `404`, sin exponer ni modificar el dato ajeno (FR-008); se
+  genera un `security_events` de tipo `cross_account_access_denied` (verificar solo a nivel de
+  base de datos, nunca expuesto en la UI/API de usuario final, FR-040).
