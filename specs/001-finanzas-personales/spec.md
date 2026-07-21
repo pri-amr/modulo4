@@ -38,6 +38,14 @@
 - Q: ¿Cuál es el orden por defecto del listado de transacciones (FR-023, FR-024)? → A: Más reciente primero, por fecha de transacción descendente y `createdAt` descendente como desempate.
 - Q: ¿En qué zona horaria se calculan los límites del "mes en curso" del gráfico de gastos (FR-025)? → A: Zona horaria de Argentina (America/Argentina/Buenos_Aires, UTC-3 fijo, sin horario de verano).
 
+### Session 2026-07-21 (seguridad de datos y API)
+
+- Q: ¿Alcanza con que la sesión rechace solicitudes entre sitios (mecanismo definido en el plan técnico) como única protección CSRF, o se exige además un token anti-CSRF explícito por operación? → A: Basta con que el mecanismo de sesión rechace solicitudes entre sitios; no se exige un token anti-CSRF adicional.
+- Q: ¿Debe el sistema emitir cabeceras de seguridad HTTP estándar (CSP, X-Content-Type-Options, X-Frame-Options, etc.)? → A: Sí, en alcance: un set base de cabeceras de seguridad HTTP estándar es requisito de esta versión.
+- Q: ¿Se exige un requisito general de validación de entrada (contra inyección hacia la base de datos), más allá de la validación de campos ya cubierta por FR-017? → A: Sí, todo input externo (body, query params) se valida contra un esquema estricto de tipo/forma antes de alcanzar la capa de persistencia.
+- Q: ¿El cifrado en tránsito (HTTPS/TLS) de los datos financieros es un requisito funcional explícito de la app, o un supuesto de infraestructura/despliegue fuera de alcance del spec? → A: Supuesto de infraestructura/despliegue — TLS se termina en la capa de despliegue, fuera del alcance funcional del spec.
+- Q: ¿Se exige un límite de tasa (rate limiting) para operaciones distintas del login (alta de transacciones, registro de passkeys, etc.)? → A: Fuera de alcance en esta versión — solo el login tiene límite de tasa (FR-036); el resto queda para una versión futura si se detecta abuso.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1)
@@ -405,6 +413,18 @@ conversión.
 - **FR-034**: El sistema MUST almacenar los datos financieros del usuario cifrados en reposo.
 - **FR-035**: El sistema MUST seguir siendo navegable y funcional aunque la fuente de
   cotizaciones no esté disponible; solo la sección de conversión se ve afectada.
+- **FR-046**: El sistema MUST proteger toda operación que modifique estado (transacciones,
+  fuentes de dinero, categorías, passkeys) contra solicitudes falsificadas entre sitios (CSRF).
+  Es suficiente que el mecanismo de sesión rechace estructuralmente solicitudes originadas en
+  otro sitio (sin exigir un token anti-CSRF adicional por operación).
+- **FR-047**: El sistema MUST emitir en cada respuesta HTTP un conjunto base de cabeceras de
+  seguridad estándar (política de contenido, prevención de MIME sniffing, prevención de
+  embebido en iframes de terceros) para mitigar ataques comunes del lado del cliente (XSS,
+  clickjacking, MIME sniffing).
+- **FR-048**: El sistema MUST validar todo input externo (cuerpo de la petición, parámetros de
+  consulta) contra un esquema estricto de tipo y forma antes de que alcance la capa de
+  persistencia, para prevenir que un valor con forma inesperada (por ejemplo, un objeto en un
+  campo que espera texto) altere una consulta a la base de datos.
 
 ### Key Entities
 
@@ -465,6 +485,8 @@ conversión.
   toda transacción se carga manualmente.
 - No hay notificaciones push, por email ni SMS en esta versión.
 - No hay exportación de datos a CSV ni PDF, ni aplicación móvil nativa, en esta versión.
+- No hay límite de tasa (rate limiting) para operaciones distintas del login (FR-036) en esta
+  versión; queda como brecha conocida a revisar si se detecta abuso en producción.
 - No se definen requisitos formales de accesibilidad (navegación por teclado, lectores de
   pantalla, contraste WCAG) en esta versión; queda como brecha conocida para una versión futura.
 - No se gestionan inversiones, plazos fijos ni criptoactivos como activos propios de la cuenta
@@ -480,3 +502,7 @@ conversión.
   disponibilidad y estructura de respuesta no están garantizadas por este equipo, por lo que el
   sistema debe seguir siendo funcional (salvo la sección de conversión) cuando ese servicio
   falla.
+- El cifrado en tránsito (HTTPS/TLS) de los datos financieros es responsabilidad de la capa de
+  despliegue (terminación TLS en el reverse proxy/balanceador y su certificado), no un requisito
+  funcional del código de la aplicación; queda fuera del alcance funcional de este spec, de
+  forma análoga a como no se definen detalles de hosting.
