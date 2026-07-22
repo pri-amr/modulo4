@@ -42,8 +42,8 @@ cd frontend && pnpm install && pnpm dev   # levanta Next.js en :3000
    listado con esos datos exactos (FR-016, FR-017).
 2. Repetir dejando la descripción vacía → guardado bloqueado, se señala el campo faltante.
 3. Ingresar monto `-5` → bloqueado, mensaje de monto > 0.
-4. Ingresar monto con 3 decimales (`10.999`) → verificar el comportamiento de redondeo/rechazo
-   consistente definido (FR-043).
+4. Ingresar monto con 3 decimales (`10.999`) → se guarda redondeado a 2 decimales (mitad hacia
+   arriba, `11.00`), sin rechazar el guardado (FR-043).
 5. Ingresar una fecha futura → bloqueado (FR-044).
 6. Editar una transacción existente → el listado y el saldo de la fuente afectada reflejan el
    nuevo valor (FR-018, FR-021).

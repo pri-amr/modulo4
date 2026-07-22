@@ -71,7 +71,7 @@ cifrado en reposo, TTL de auditoría y campos de bloqueo).
 | `_id` | ObjectId | PK |
 | `userId` | ObjectId | FK → `users._id` |
 | `type` | enum `'income' \| 'expense'` | FR-016 |
-| `amount` | Decimal128, > 0 | hasta 2 decimales (FR-043); rechazo/redondeo consistente si excede precisión |
+| `amount` | Decimal128, > 0 | hasta 2 decimales; si excede precisión se redondea a 2 decimales (mitad hacia arriba), nunca se rechaza por este motivo (FR-043) |
 | `currency` | enum `'ARS' \| 'USD'` | FR-017 |
 | `moneySourceId` | ObjectId | FK → `money_sources._id`, debe existir y pertenecer al mismo `userId` |
 | `categoryId` | ObjectId | FK → `categories._id`, debe existir y pertenecer al mismo `userId` |
