@@ -112,12 +112,13 @@ según `plan.md` → Project Structure.
   depende de T021; hace pasar T022). Nota: este módulo NUNCA recibe una carpeta `interface/`
   (sin rutas Express) — es la forma en que se cumple FR-040; la ausencia se verifica en T123.
 - [ ] T024 [P] Test unitario de `requireOwnership` (404 ante mismatch de `userId`, dispara el
-  log de auditoría) en `backend/tests/unit/shared/requireOwnership.test.ts` — escribir primero,
-  debe fallar
+  log de auditoría, FR-008/SC-008) en `backend/tests/unit/shared/requireOwnership.test.ts` —
+  escribir primero, debe fallar
 - [ ] T025 Implementar el helper `requireOwnership` en
   `backend/src/shared/http/requireOwnership.ts` (FR-008; depende de T020, T023; hace pasar T024)
 - [ ] T026 Bootstrap de la app Express (`helmet()` montado globalmente para cabeceras de
-  seguridad HTTP FR-047, parseo JSON, montaje de error handler, placeholder de rutas) en
+  seguridad HTTP FR-047, parseo JSON, montaje de error handler, placeholder de rutas bajo el
+  prefijo `/api/v1` fijado en contracts/api.md — todos los módulos montan sus rutas ahí) en
   `backend/src/app.ts`
 - [ ] T027 [P] Bootstrap del entrypoint del servidor (lee `PORT`, conecta Mongo antes de
   escuchar) en `backend/src/server.ts` (depende de T009, T026)
@@ -214,20 +215,22 @@ el método elegido permite volver a entrar.
   `backend/src/modules/auth/application/queries/listPasskeys.ts` (depende de T050)
 - [ ] T058 [US1] Implementar `backend/src/modules/auth/interface/authRoutes.ts` cableando
   T051-T057 según contracts/api.md §Auth (depende de T020, T025, T051-T057; usa T013
-  `validateSchema` en cada endpoint de escritura FR-048, y T019 `setSessionCookie`/
+  `validateSchema` en cada endpoint de escritura FR-048, T019 `setSessionCookie`/
   `clearSessionCookie` para emitir/invalidar la cookie de sesión en login, webauthn-verify y
-  logout, FR-046)
+  logout FR-046, y T025 `requireOwnership` específicamente en `DELETE /auth/passkeys/:id` para
+  garantizar 404 ante una passkey de otra cuenta, FR-008/SC-008)
 - [ ] T059 [US1] Montar las rutas de auth en `backend/src/app.ts` (depende de T026, T058)
 - [ ] T060 [P] [US1] Implementar el provider de next-auth que delega en el backend vía
   `handleRequest` en `frontend/src/app/api/auth/[...nextauth]/route.ts` (depende de T029, T036;
   hace pasar parte de T044)
 - [ ] T061 [P] [US1] Construir la pantalla de Login (tarjeta centrada 40% de ancho, logo a la
   izquierda, línea divisoria, formulario en columna a la derecha, botones "Ingreso"/"Ingreso con
-  passkey") en `frontend/src/app/login/page.tsx` y `frontend/src/components/auth/LoginForm.tsx`
-  (hace pasar el resto de T044)
+  passkey"; redirige al dashboard tras autenticación exitosa, FR-003) en
+  `frontend/src/app/login/page.tsx` y `frontend/src/components/auth/LoginForm.tsx` (hace pasar
+  el resto de T044)
 - [ ] T062 [P] [US1] Construir la pantalla de Registro (mismo layout, botones
-  "Registrar"/"Registro con passkey") en `frontend/src/app/registro/page.tsx` y
-  `frontend/src/components/auth/RegisterForm.tsx`
+  "Registrar"/"Registro con passkey"; redirige al dashboard tras registro exitoso, FR-003) en
+  `frontend/src/app/registro/page.tsx` y `frontend/src/components/auth/RegisterForm.tsx`
 - [ ] T063 [P] [US1] Construir el shell del Dashboard (4 tarjetas horizontales responsive
   <500px, menú hamburguesa con "Cerrar Sesión"/"Agregar-Borrar passkey") en
   `frontend/src/app/dashboard/page.tsx` y `frontend/src/components/auth/DashboardMenu.tsx`
@@ -254,9 +257,9 @@ fuentes/categorías predefinidas, verificando que el listado refleja exactamente
   `backend/tests/contract/money-sources.test.ts`
 - [ ] T066 [P] [US2] Contract test `GET/POST /categories` (mismo criterio de 404/405 en
   `PUT`/`DELETE`, FR-015) en `backend/tests/contract/categories.test.ts`
-- [ ] T067 [P] [US2] Contract test `POST/PUT/DELETE /transactions` (validación de campos,
-  precisión de 2 decimales, fecha futura, ownership) en
-  `backend/tests/contract/transactions.test.ts`
+- [ ] T067 [P] [US2] Contract test `POST/PUT/DELETE /transactions` (validación de campos, monto
+  con 3+ decimales se redondea a 2 —mitad hacia arriba— sin rechazar el guardado FR-043, fecha
+  futura, ownership) en `backend/tests/contract/transactions.test.ts`
 - [ ] T068 [P] [US2] Integration test: ante un fallo de guardado se conserva la posibilidad de
   reintentar sin perder los datos ingresados en
   `backend/tests/integration/transactions-save-failure.test.ts` (FR-020)
@@ -288,17 +291,20 @@ fuentes/categorías predefinidas, verificando que el listado refleja exactamente
   categorías (comida, transporte, sueldo, freelance) predefinidas al registrar una cuenta en
   `backend/src/modules/auth/application/commands/registerUser.ts` (extiende T051; FR-009,
   FR-012; depende de T073, T074; hace pasar T069)
-- [ ] T077 [P] [US2] Implementar el comando `CreateMoneySource` (chequeo de duplicado exacto,
-  FR-011) en `backend/src/modules/money-sources/application/commands/createMoneySource.ts`
-  (depende de T073; hace pasar parte de T065)
+- [ ] T077 [P] [US2] Implementar el comando `CreateMoneySource` (alta con nombre propio ≤60
+  caracteres FR-010; chequeo de duplicado exacto FR-011) en
+  `backend/src/modules/money-sources/application/commands/createMoneySource.ts` (depende de
+  T073; hace pasar parte de T065)
 - [ ] T078 [P] [US2] Implementar la query `ListMoneySources` en
   `backend/src/modules/money-sources/application/queries/listMoneySources.ts` (depende de T073)
-- [ ] T079 [P] [US2] Implementar el comando `CreateCategory` (chequeo de duplicado exacto,
-  FR-014) en `backend/src/modules/categories/application/commands/createCategory.ts` (depende
-  de T074; hace pasar parte de T066)
+- [ ] T079 [P] [US2] Implementar el comando `CreateCategory` (alta con nombre propio ≤60
+  caracteres FR-013; chequeo de duplicado exacto FR-014) en
+  `backend/src/modules/categories/application/commands/createCategory.ts` (depende de T074;
+  hace pasar parte de T066)
 - [ ] T080 [P] [US2] Implementar la query `ListCategories` en
   `backend/src/modules/categories/application/queries/listCategories.ts` (depende de T074)
-- [ ] T081 [US2] Implementar el comando `CreateTransaction` (FR-016/017/043/044) en
+- [ ] T081 [US2] Implementar el comando `CreateTransaction` (FR-016/017/044; redondea `amount` a
+  2 decimales con redondeo estándar mitad-hacia-arriba si llega con mayor precisión, FR-043) en
   `backend/src/modules/transactions/application/commands/createTransaction.ts` (depende de
   T075; hace pasar parte de T067)
 - [ ] T082 [US2] Implementar el comando `UpdateTransaction` (FR-018) en
@@ -315,7 +321,9 @@ fuentes/categorías predefinidas, verificando que el listado refleja exactamente
   T025, T079, T080; hace pasar el resto de T066)
 - [ ] T086 [US2] Implementar `backend/src/modules/transactions/interface/transactionRoutes.ts`
   (solo POST/PUT/DELETE en esta historia; GET con filtros llega en US4; usa T013
-  `validateSchema`, FR-048; depende de T020, T025, T081-T083)
+  `validateSchema`, FR-048, y T025 `requireOwnership` en `PUT/DELETE /transactions/:id` para
+  garantizar 404 ante una transacción de otra cuenta, FR-008/SC-008; depende de T020, T025,
+  T081-T083)
 - [ ] T087 [US2] Montar rutas de money-sources/categories/transactions en `backend/src/app.ts`
   (depende de T084-T086)
 - [ ] T088 [P] [US2] Construir la pantalla "Alta de categoría" (centrada, 2 columnas) en
@@ -474,9 +482,10 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 - [ ] T117 [US6] Implementar `backend/src/modules/converter/interface/converterRoutes.ts`
   (contrato de error 502, FR-032; usa T013 `validateSchema`, FR-048) y montarla en
   `backend/src/app.ts` (depende de T020, T025, T115, T116; hace pasar T111)
-- [ ] T118 [US6] Construir la pantalla Conversor (monto, selector de dirección, 7 tipos de
-  cambio, resultado) en `frontend/src/app/conversor/page.tsx` y
-  `frontend/src/components/converter/ConverterForm.tsx` (hace pasar T113)
+- [ ] T118 [US6] Construir la pantalla Conversor, sección dedicada del dashboard (monto,
+  selector de dirección, 7 tipos de cambio, resultado, FR-028) en
+  `frontend/src/app/conversor/page.tsx` y `frontend/src/components/converter/ConverterForm.tsx`
+  (hace pasar T113)
 
 **Checkpoint**: las 6 historias de usuario funcionan de forma independiente y en conjunto.
 
@@ -486,8 +495,9 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 **Purpose**: mejoras que afectan a varias historias
 
-- [ ] T119 [P] Ejecutar y validar los 6 escenarios de `quickstart.md` de punta a punta,
-  incluyendo la validación no funcional (SC-002 a SC-004, SC-006)
+- [ ] T119 [P] Ejecutar y validar los 6 escenarios de `quickstart.md` de punta a punta (SC-001),
+  incluyendo la validación no funcional (SC-002 a SC-004, SC-006) y que la app permanece
+  navegable/funcional con dolarapi.com caído salvo la sección de conversión (FR-035)
 - [ ] T120 [P] Tests unitarios de casos límite del reseteo de bloqueo (éxito vs. expiración de
   los 15 min) en `backend/tests/unit/auth/lockout-reset.test.ts`
 - [ ] T121 [P] Verificar el comportamiento responsive de SC-006 (320px y el breakpoint de 500px)

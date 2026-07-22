@@ -88,12 +88,13 @@ Orden por defecto: fecha de transacción descendente, `createdAt` descendente co
 boolean }`.
 
 ### `POST /transactions`
-**Body**: `{ "type": "income"|"expense", "amount": number (>0, ≤2 decimales), "currency":
+**Body**: `{ "type": "income"|"expense", "amount": number (>0), "currency":
 "ARS"|"USD", "moneySourceId": string, "categoryId": string, "date": "YYYY-MM-DD" (≤ hoy),
-"description": string }`
-**201**: `Transaction`
-**400**: campo faltante (indica cuál, FR-017), monto ≤0 (FR-017), fecha futura (FR-044),
-más de 2 decimales (FR-043).
+"description": string }`. Un `amount` con más de 2 decimales se redondea a 2 decimales
+(redondeo estándar, mitad hacia arriba) antes de guardarse; no se rechaza por ese motivo
+(FR-043).
+**201**: `Transaction` (con `amount` ya redondeado a 2 decimales si correspondía).
+**400**: campo faltante (indica cuál, FR-017), monto ≤0 (FR-017), fecha futura (FR-044).
 **502**: fallo al persistir; el frontend conserva los datos ingresados para reintentar (FR-020).
 
 ### `PUT /transactions/:id`
@@ -136,7 +137,8 @@ exactamente 100% (FR-025).
 
 ### `GET /converter/rates`
 Proxy de dolarapi.com para los 7 tipos requeridos (FR-029). **200**: `[{ "type": "oficial" |
-"blue" | "bolsa" | "cripto" | "tarjeta" | "cclq" | "mayorista", "venta": number }]`.
+"blue" | "bolsa" | "cripto" | "tarjeta" | "cclq" | "mayorista", "venta": number }]`. `cclq` =
+"contado con liqui" (research.md §8).
 **502**: `{ "error": { "code": "QUOTE_SOURCE_UNAVAILABLE", "message": "..." } }` — el frontend
 NUNCA muestra un valor de conversión ante esta respuesta (FR-032, RF30); mismo código y
 tratamiento cuando dolarapi.com responde 200 pero sin el tipo de cambio solicitado (FR-030,

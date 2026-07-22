@@ -88,7 +88,8 @@
 - **Decision**: consumir `GET https://dolarapi.com/v1/dolares` (lista de tipos de cambio, cada
   uno con `casa`, `compra`, `venta`) desde el backend (módulo `converter`), con `axios` y un
   timeout explícito, mapeando los 7 tipos requeridos (oficial, blue, bolsa, cripto, tarjeta,
-  contado con liqui, mayorista) a las `casa` correspondientes de la API.
+  contado con liqui, mayorista) a las `casa` correspondientes de la API. El código usado en
+  `contracts/api.md` y en el mapeo de tipos para "contado con liqui" es `cclq`.
 - **Rationale**: FR-030 exige el valor de `venta`; consumir la API desde el backend (no desde el
   navegador) evita exponer la URL de terceros directamente al cliente y centraliza el manejo de
   timeout/error exigido por FR-032 en un único punto, reutilizable también si se agrega caching
@@ -170,8 +171,20 @@
   `sameSite=strict` para el modelo de despliegue de esta app, agrega complejidad no exigida por
   ningún FR).
 
+## 15. Driver de MongoDB (backend)
+
+- **Decision**: `mongoose` como capa de acceso a MongoDB en todos los repositorios
+  (`infrastructure/`) del backend.
+- **Rationale**: da esquemas y tipado consistente por colección (`users`, `passkey_credentials`,
+  `money_sources`, `categories`, `transactions`, `security_events`), coherente con el uso de
+  TypeScript en todo el stack; evita que cada repositorio implemente su propio mapeo
+  documento↔entidad de dominio a mano sobre el driver nativo.
+- **Alternatives considered**: driver oficial de MongoDB (`mongodb`) sin ODM (rechazado: más
+  código repetido de mapeo por repositorio, sin beneficio adicional dado que `zod` ya cubre la
+  validación de esquema en el borde HTTP, FR-048, research.md §12).
+
 ## Unknowns resueltos
 
 Todos los ítems marcados como `NEEDS CLARIFICATION` en el Technical Context de `plan.md` quedan
-resueltos por las decisiones 1 a 14 de este documento. No quedan unknowns pendientes para
+resueltos por las decisiones 1 a 15 de este documento. No quedan unknowns pendientes para
 Phase 1.

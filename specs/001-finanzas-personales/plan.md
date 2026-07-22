@@ -27,9 +27,10 @@ módulo, sin framework ni broker adicional); MongoDB como única base de datos; 
   (research.md §7), `@heroicons/react` (íconos, ver "Estándares de Interfaz" abajo). Sin
   librería de componentes UI: los componentes se construyen a medida sobre clases Tailwind.
 - Backend: Express, `@simplewebauthn/server` (research.md §1), `argon2` (research.md §2),
-  `jsonwebtoken` (sesión propia, research.md §3), driver oficial de MongoDB (o `mongoose`),
-  `axios` (dolarapi.com, research.md §8), `zod` (validación de esquema de todo input externo,
-  FR-048, research.md §12), `helmet` (cabeceras de seguridad HTTP, FR-047, research.md §13).
+  `jsonwebtoken` (sesión propia, research.md §3), `mongoose` (acceso a MongoDB, research.md
+  §15), `axios` (dolarapi.com, research.md §8), `zod` (validación de esquema de todo input
+  externo, FR-048, research.md §12), `helmet` (cabeceras de seguridad HTTP, FR-047, research.md
+  §13).
 
 **Storage**: MongoDB (colecciones descriptas en `data-model.md`; cifrado en reposo a nivel de
 almacenamiento, research.md §4)

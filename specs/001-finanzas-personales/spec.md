@@ -46,6 +46,10 @@
 - Q: ¿El cifrado en tránsito (HTTPS/TLS) de los datos financieros es un requisito funcional explícito de la app, o un supuesto de infraestructura/despliegue fuera de alcance del spec? → A: Supuesto de infraestructura/despliegue — TLS se termina en la capa de despliegue, fuera del alcance funcional del spec.
 - Q: ¿Se exige un límite de tasa (rate limiting) para operaciones distintas del login (alta de transacciones, registro de passkeys, etc.)? → A: Fuera de alcance en esta versión — solo el login tiene límite de tasa (FR-036); el resto queda para una versión futura si se detecta abuso.
 
+### Session 2026-07-21 (remediación `/speckit-analyze`)
+
+- Q: FR-043 dejaba abierto si un monto con más de 2 decimales se redondea o se rechaza. ¿Cuál de las dos? → A: Se redondea a 2 decimales (redondeo estándar, mitad hacia arriba); no se rechaza el guardado por ese motivo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1)
@@ -345,8 +349,9 @@ conversión.
   fecha y una descripción de texto libre sin límite máximo de longitud; MUST impedir el
   guardado si falta alguno de estos datos y MUST indicar cuál falta.
 - **FR-043**: El sistema MUST aceptar montos de transacción con hasta 2 decimales (precisión de
-  centavos) y MUST redondear o rechazar (de forma consistente) cualquier valor con mayor
-  precisión ingresado.
+  centavos); si el usuario ingresa un valor con mayor precisión, el sistema MUST redondearlo a 2
+  decimales (redondeo estándar, mitad hacia arriba) antes de guardarlo, sin rechazar el
+  guardado por ese motivo.
 - **FR-044**: El sistema MUST rechazar como inválida cualquier fecha de transacción posterior a
   la fecha actual; solo se permite fecha de hoy o anterior.
 - **FR-018**: El sistema MUST permitir editar una transacción existente y reflejar los nuevos
