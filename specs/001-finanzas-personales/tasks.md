@@ -16,13 +16,13 @@ antes de la sección "Implementation" completa de esa historia — igual que un 
 tener varios tests de contrato antes de construirse capa por capa, un componente de frontend
 tiene su test antes de implementarse, nunca después.
 
-**Organization**: Tareas agrupadas por historia de usuario (US1-US6, prioridad de spec.md) para
+**Organization**: Tareas agrupadas por historia de usuario (US1-US7, prioridad de spec.md) para
 permitir implementación y prueba independientes de cada una.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: puede ejecutarse en paralelo (archivo distinto, sin dependencias pendientes)
-- **[Story]**: historia de usuario a la que pertenece (US1..US6); Setup/Foundational/Polish no
+- **[Story]**: historia de usuario a la que pertenece (US1..US7); Setup/Foundational/Polish no
   llevan story label
 - Cada tarea incluye la ruta de archivo exacta
 
@@ -70,7 +70,7 @@ según `plan.md` → Project Structure.
 - [X] T009 Implementar la conexión a MongoDB en `backend/src/shared/infrastructure/db.ts`,
   usando un motor/instancia con cifrado en reposo habilitado (encrypted storage engine
   self-hosted o cifrado gestionado del proveedor, research.md §4, FR-034; verificación final en
-  T128)
+  T135)
 - [X] T010 [P] Implementar el loader de configuración de entorno con validación en
   `backend/src/shared/config/env.ts`
 - [X] T011 [P] Implementar el formato de error estándar y el middleware de manejo de errores
@@ -110,7 +110,7 @@ según `plan.md` → Project Structure.
 - [X] T023 Implementar el comando `RecordSecurityEvent` en
   `backend/src/modules/security-log/application/commands/recordSecurityEvent.ts` (FR-038;
   depende de T021; hace pasar T022). Nota: este módulo NUNCA recibe una carpeta `interface/`
-  (sin rutas Express) — es la forma en que se cumple FR-040; la ausencia se verifica en T124.
+  (sin rutas Express) — es la forma en que se cumple FR-040; la ausencia se verifica en T131.
 - [X] T024 [P] Test unitario de `requireOwnership` (404 ante mismatch de `userId`, dispara el
   log de auditoría, FR-008/SC-008) en `backend/tests/unit/shared/requireOwnership.test.ts` —
   escribir primero, debe fallar
@@ -246,288 +246,349 @@ el método elegido permite volver a entrar.
 
 ---
 
-## Phase 4: User Story 2 - Registro de ingresos y egresos (Priority: P1)
+## Phase 4: User Story 2 - Alta de fuentes de dinero y categorías propias (Priority: P1)
 
-**Goal**: alta de fuentes/categorías propias, alta/edición/borrado de transacciones — incluida
-la interacción completa en la UI (no solo el backend).
+**Goal**: alta de fuentes de dinero propias (nombre, campo "virtual", monto inicial en ARS y en
+USD) y de categorías propias (nombre), partiendo de un catálogo vacío (sin seed) para toda
+cuenta recién creada.
 
-**Independent Test**: crear, editar y eliminar transacciones desde una cuenta autenticada usando
-fuentes/categorías predefinidas, verificando que el listado refleja exactamente los datos.
+**Independent Test**: desde una cuenta recién creada (sin fuentes de dinero ni categorías), dar
+de alta una fuente con todos sus campos y una categoría, y verificar que ambas quedan
+disponibles para selección — entrega valor por sí sola, sin depender de que existan
+transacciones.
 
 ### Tests for User Story 2 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T066 [P] [US2] Contract test `GET/POST /money-sources` (incluye 409 duplicado, 400 >60
-  caracteres, y 404/405 ante `PUT`/`DELETE` — FR-015 no admite edición ni borrado) en
+- [ ] T066 [P] [US2] Contract test `GET/POST /money-sources` (catálogo vacío en `GET` para una
+  cuenta nueva FR-009; `POST` 201 con `virtual`/`amountARS`/`amountUSD`; 409 nombre duplicado
+  FR-011; 400 nombre vacío/>60 FR-010, `virtual` ausente FR-049, monto ausente o negativo
+  FR-050/FR-051; 404/405 ante `PUT`/`DELETE` FR-015) en
   `backend/tests/contract/money-sources.test.ts`
-- [ ] T067 [P] [US2] Contract test `GET/POST /categories` (mismo criterio de 404/405 en
-  `PUT`/`DELETE`, FR-015) en `backend/tests/contract/categories.test.ts`
-- [ ] T068 [P] [US2] Contract test `POST/PUT/DELETE /transactions` (validación de campos, monto
-  con 3+ decimales se redondea a 2 —mitad hacia arriba— sin rechazar el guardado FR-043, fecha
-  futura, ownership) en `backend/tests/contract/transactions.test.ts`
-- [ ] T069 [P] [US2] Integration test: ante un fallo de guardado se conserva la posibilidad de
-  reintentar sin perder los datos ingresados en
-  `backend/tests/integration/transactions-save-failure.test.ts` (FR-020)
-- [ ] T070 [P] [US2] Integration test: un usuario recién registrado tiene automáticamente las 6
-  fuentes de dinero y las 4 categorías predefinidas (FR-009, FR-012) en
-  `backend/tests/integration/auth-predefined-seed.test.ts`
-- [ ] T071 [P] [US2] Test de frontend: error de nombre duplicado en `CategoryForm`/
-  `MoneySourceForm` en `frontend/__tests__/transactions/money-source-category-form.test.tsx`
-- [ ] T072 [P] [US2] Test de frontend: validación, prevención de doble envío (FR-045) y
-  conservación de datos ante fallo (FR-020) de `TransactionForm` en
-  `frontend/__tests__/transactions/transaction-form.test.tsx`
-- [ ] T073 [P] [US2] Test de frontend: `TransactionHistory` renderiza el listado, permite editar
-  una transacción (reutilizando `TransactionForm`) y eliminarla con diálogo de confirmación
-  (FR-018, FR-019) en `frontend/__tests__/transactions/transaction-history.test.tsx`
+- [ ] T067 [P] [US2] Contract test `GET/POST /categories` (catálogo vacío en `GET` para una
+  cuenta nueva FR-012; 409 nombre duplicado FR-014; 400 nombre vacío/>60 FR-013; 404/405 ante
+  `PUT`/`DELETE` FR-015) en `backend/tests/contract/categories.test.ts`
+- [ ] T068 [P] [US2] Test de frontend: `MoneySourceForm` — campos nombre, desplegable "virtual"
+  (Sí/No), monto inicial ARS y monto inicial USD; bloquea el alta si falta `virtual` o un monto,
+  o si un monto es negativo; muestra error de nombre duplicado en
+  `frontend/__tests__/money-sources/money-source-form.test.tsx`
+- [ ] T069 [P] [US2] Test de frontend: `CategoryForm` — campo nombre; muestra error de nombre
+  duplicado en `frontend/__tests__/categories/category-form.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T074 [P] [US2] Implementar entidad de dominio + repositorio `MoneySource` en
-  `backend/src/modules/money-sources/domain/moneySource.ts` y
-  `backend/src/modules/money-sources/infrastructure/moneySourceRepository.ts`
-- [ ] T075 [P] [US2] Implementar entidad de dominio + repositorio `Category` en
-  `backend/src/modules/categories/domain/category.ts` y
-  `backend/src/modules/categories/infrastructure/categoryRepository.ts`
-- [ ] T076 [P] [US2] Implementar entidad de dominio + repositorio `Transaction` (precisión de 2
-  decimales FR-043, fecha ≤ hoy FR-044) en
-  `backend/src/modules/transactions/domain/transaction.ts` y
-  `backend/src/modules/transactions/infrastructure/transactionRepository.ts`
-- [ ] T077 [US2] Sembrar las fuentes (Santander, BNA, Macro, Lemon, Brubank, Efectivo) y
-  categorías (comida, transporte, sueldo, freelance) predefinidas al registrar una cuenta en
-  `backend/src/modules/auth/application/commands/registerUser.ts` (extiende T052; FR-009,
-  FR-012; depende de T074, T075; hace pasar T070)
-- [ ] T078 [P] [US2] Implementar el comando `CreateMoneySource` (alta con nombre propio ≤60
-  caracteres FR-010; chequeo de duplicado exacto FR-011) en
-  `backend/src/modules/money-sources/application/commands/createMoneySource.ts` (depende de
-  T074; hace pasar parte de T066)
-- [ ] T079 [P] [US2] Implementar la query `ListMoneySources` en
-  `backend/src/modules/money-sources/application/queries/listMoneySources.ts` (depende de T074)
-- [ ] T080 [P] [US2] Implementar el comando `CreateCategory` (alta con nombre propio ≤60
-  caracteres FR-013; chequeo de duplicado exacto FR-014) en
-  `backend/src/modules/categories/application/commands/createCategory.ts` (depende de T075;
-  hace pasar parte de T067)
-- [ ] T081 [P] [US2] Implementar la query `ListCategories` en
-  `backend/src/modules/categories/application/queries/listCategories.ts` (depende de T075)
-- [ ] T082 [US2] Implementar el comando `CreateTransaction` (FR-016/017/044; redondea `amount` a
-  2 decimales con redondeo estándar mitad-hacia-arriba si llega con mayor precisión, FR-043) en
-  `backend/src/modules/transactions/application/commands/createTransaction.ts` (depende de
-  T076; hace pasar parte de T068)
-- [ ] T083 [US2] Implementar el comando `UpdateTransaction` (FR-018) en
-  `backend/src/modules/transactions/application/commands/updateTransaction.ts` (depende de
-  T076; hace pasar parte de T068)
-- [ ] T084 [US2] Implementar el comando `DeleteTransaction` (FR-019) en
-  `backend/src/modules/transactions/application/commands/deleteTransaction.ts` (depende de
-  T076; hace pasar el resto de T068)
-- [ ] T085 [US2] Implementar `backend/src/modules/money-sources/interface/moneySourceRoutes.ts`
+- [ ] T070 [P] [US2] Implementar la entidad de dominio `MoneySource` (nombre ≤60 inmutable
+  FR-015; `virtual` booleano obligatorio e inmutable FR-049; `amountARS`/`amountUSD` obligatorios
+  y ≥0 al alta FR-050/FR-051, inmutables salvo el recálculo automático) en
+  `backend/src/modules/money-sources/domain/moneySource.ts`
+- [ ] T071 [P] [US2] Implementar `MoneySourceRepository` (Mongo) en
+  `backend/src/modules/money-sources/infrastructure/moneySourceRepository.ts` (depende de T009,
+  T070)
+- [ ] T072 [P] [US2] Implementar la entidad de dominio `Category` (nombre ≤60 inmutable FR-015)
+  en `backend/src/modules/categories/domain/category.ts`
+- [ ] T073 [P] [US2] Implementar `CategoryRepository` (Mongo) en
+  `backend/src/modules/categories/infrastructure/categoryRepository.ts` (depende de T009, T072)
+- [ ] T074 [US2] Implementar el comando `CreateMoneySource` (nombre propio ≤60 FR-010; chequeo
+  de duplicado exacto FR-011; `virtual` obligatorio FR-049; `amountARS`/`amountUSD` obligatorios
+  y ≥0 FR-050/FR-051) en `backend/src/modules/money-sources/application/commands/createMoneySource.ts`
+  (depende de T071; hace pasar parte de T066)
+- [ ] T075 [P] [US2] Implementar la query `ListMoneySources` (devuelve `[]` si la cuenta todavía
+  no dio de alta ninguna, FR-009) en
+  `backend/src/modules/money-sources/application/queries/listMoneySources.ts` (depende de T071)
+- [ ] T076 [US2] Implementar el comando `CreateCategory` (nombre propio ≤60 FR-013; chequeo de
+  duplicado exacto FR-014) en `backend/src/modules/categories/application/commands/createCategory.ts`
+  (depende de T073; hace pasar parte de T067)
+- [ ] T077 [P] [US2] Implementar la query `ListCategories` (devuelve `[]` si la cuenta todavía no
+  dio de alta ninguna, FR-012) en
+  `backend/src/modules/categories/application/queries/listCategories.ts` (depende de T073)
+- [ ] T078 [US2] Implementar `backend/src/modules/money-sources/interface/moneySourceRoutes.ts`
   (solo `GET`/`POST`; `PUT`/`DELETE` responden 404, FR-015; usa T013 `validateSchema`, FR-048)
-  (depende de T020, T025, T078, T079; hace pasar el resto de T066)
-- [ ] T086 [US2] Implementar `backend/src/modules/categories/interface/categoryRoutes.ts` (mismo
+  (depende de T020, T025, T074, T075; hace pasar el resto de T066)
+- [ ] T079 [US2] Implementar `backend/src/modules/categories/interface/categoryRoutes.ts` (mismo
   criterio 404 en `PUT`/`DELETE`, FR-015; usa T013 `validateSchema`, FR-048) (depende de T020,
-  T025, T080, T081; hace pasar el resto de T067)
-- [ ] T087 [US2] Implementar `backend/src/modules/transactions/interface/transactionRoutes.ts`
-  (solo POST/PUT/DELETE en esta historia; GET con filtros llega en US4; usa T013
-  `validateSchema`, FR-048, y T025 `requireOwnership` en `PUT/DELETE /transactions/:id` para
-  garantizar 404 ante una transacción de otra cuenta, FR-008/SC-008; depende de T020, T025,
-  T082-T084)
-- [ ] T088 [US2] Montar rutas de money-sources/categories/transactions en `backend/src/app.ts`
-  (depende de T085-T087)
-- [ ] T089 [P] [US2] Construir la pantalla "Alta de categoría" (centrada, 2 columnas) en
-  `frontend/src/app/categorias/nueva/page.tsx` y
-  `frontend/src/components/categories/CategoryForm.tsx` (hace pasar parte de T071)
-- [ ] T090 [P] [US2] Construir la pantalla "Alta de fuente de dinero" (centrada, 2 columnas) en
+  T025, T076, T077; hace pasar el resto de T067)
+- [ ] T080 [US2] Montar rutas de money-sources/categories en `backend/src/app.ts` (depende de
+  T078, T079)
+- [ ] T081 [P] [US2] Construir la pantalla "Alta de categoría" (centrada, campo único de nombre)
+  en `frontend/src/app/categorias/nueva/page.tsx` y
+  `frontend/src/components/categories/CategoryForm.tsx` (hace pasar T069)
+- [ ] T082 [P] [US2] Construir la pantalla "Alta de fuente de dinero" (centrada, dos columnas:
+  nombre, desplegable "virtual" Sí/No, monto inicial ARS, monto inicial USD) en
   `frontend/src/app/fuentes/nueva/page.tsx` y
-  `frontend/src/components/money-sources/MoneySourceForm.tsx` (hace pasar el resto de T071)
-- [ ] T091 [US2] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
-  apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx`
-- [ ] T092 [US2] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
-  botón deshabilitado durante el envío, FR-045) en
-  `frontend/src/components/transactions/TransactionForm.tsx` (depende de T091; hace pasar T072)
-- [ ] T093 [US2] Construir el historial/listado base (cuadrante inferior izquierdo de
-  "Transacciones"): renderiza las transacciones, permite editar reutilizando `TransactionForm`
-  en modo edición y eliminar con diálogo de confirmación (FR-018, FR-019) en
-  `frontend/src/components/transactions/TransactionHistory.tsx` (depende de T083, T084, T092;
-  hace pasar T073). Los filtros por período y la paginación se agregan en US4 (T105) sobre este
-  mismo componente.
+  `frontend/src/components/money-sources/MoneySourceForm.tsx` (hace pasar T068)
 
-**Checkpoint**: US1 + US2 funcionan de forma independiente y en conjunto — incluye la
-interacción completa (alta, edición, borrado) desde la UI.
+**Checkpoint**: US1 + US2 funcionan de forma independiente y en conjunto.
 
 ---
 
-## Phase 5: User Story 3 - Visibilidad de saldos por fuente y consolidados (Priority: P2)
+## Phase 5: User Story 3 - Registro de ingresos y egresos (Priority: P1)
 
-**Goal**: saldo por fuente/moneda y consolidado por moneda.
+**Goal**: alta/edición/borrado de transacciones — incluida la interacción completa en la UI —
+con recálculo automático del monto de la fuente afectada en cada escritura, incluido el cruce de
+fuente/moneda cuando una edición las cambia.
 
-**Independent Test**: con transacciones ya cargadas, el saldo por fuente y el consolidado
-coinciden con ingresos menos egresos.
+**Independent Test**: con al menos una fuente de dinero y una categoría ya dadas de alta (US2),
+crear, editar y eliminar transacciones desde una cuenta autenticada, verificando que el listado
+y el monto de la fuente reflejan exactamente los datos.
 
 ### Tests for User Story 3 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T094 [P] [US3] Contract test `GET /balances` (por fuente y consolidado) en
-  `backend/tests/contract/balances.test.ts`
-- [ ] T095 [P] [US3] Integration test: saldo = ingresos − egresos por fuente/moneda en
-  `backend/tests/integration/balances-calculation.test.ts` (FR-021/FR-022, SC-007)
-- [ ] T096 [P] [US3] Test de frontend: `BalanceTable` renderiza filas por fuente + totales
-  consolidados (`handleRequest` mockeado) en `frontend/__tests__/balances/balance-table.test.tsx`
+- [ ] T083 [P] [US3] Contract test `POST/PUT/DELETE /transactions` (validación de campos, monto
+  con 3+ decimales se redondea a 2 —mitad hacia arriba— sin rechazar el guardado FR-043, fecha
+  futura FR-044, ownership, `PUT` puede cambiar `moneySourceId`/`currency` FR-018) en
+  `backend/tests/contract/transactions.test.ts`
+- [ ] T084 [P] [US3] Integration test: crear un ingreso/egreso recalcula `amountARS` o
+  `amountUSD` de la fuente exactamente en el monto ingresado en
+  `backend/tests/integration/transactions-balance-recalc.test.ts` (FR-052)
+- [ ] T085 [P] [US3] Integration test: editar una transacción cambiando su fuente de dinero y/o
+  su moneda revierte el efecto sobre la fuente/moneda original y lo aplica sobre la nueva, de
+  forma atómica, en `backend/tests/integration/transactions-edit-cross-source.test.ts` (FR-018,
+  FR-052, research.md §16)
+- [ ] T086 [P] [US3] Integration test: eliminar una transacción revierte su efecto sobre el
+  monto de la fuente en `backend/tests/integration/transactions-delete-recalc.test.ts` (FR-052)
+- [ ] T087 [P] [US3] Integration test: un egreso que deja el monto de una fuente en negativo se
+  guarda igual, sin bloqueo, en
+  `backend/tests/integration/transactions-negative-balance.test.ts` (Edge Case, clarificación
+  2026-07-24)
+- [ ] T088 [P] [US3] Integration test: ante un fallo de guardado se conserva la posibilidad de
+  reintentar sin perder los datos ingresados en
+  `backend/tests/integration/transactions-save-failure.test.ts` (FR-020)
+- [ ] T089 [P] [US3] Test de frontend: validación, prevención de doble envío (FR-045),
+  conservación de datos ante fallo (FR-020), y selectores de fuente/categoría vacíos si la
+  cuenta todavía no dio de alta ninguna (FR-009, FR-012) de `TransactionForm` en
+  `frontend/__tests__/transactions/transaction-form.test.tsx`
+- [ ] T090 [P] [US3] Test de frontend: `TransactionHistory` renderiza el listado, permite editar
+  una transacción (reutilizando `TransactionForm`, incluido cambiar de fuente/moneda) y
+  eliminarla con diálogo de confirmación (FR-018, FR-019) en
+  `frontend/__tests__/transactions/transaction-history.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T097 [US3] Implementar la query `GetBalances` (agregación Mongo por fuente+moneda y por
-  moneda) en `backend/src/modules/balances/application/queries/getBalances.ts` (depende de T076;
-  hace pasar T094, T095)
-- [ ] T098 [US3] Implementar `backend/src/modules/balances/interface/balanceRoutes.ts` (usa T013
-  `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T097)
-- [ ] T099 [US3] Construir la tabla de saldos por fuente (cuadrante superior derecho de
-  "Transacciones") en `frontend/src/components/balances/BalanceTable.tsx` (depende de T091;
-  hace pasar T096)
+- [ ] T091 [P] [US3] Implementar entidad de dominio + repositorio `Transaction` (precisión de 2
+  decimales FR-043, fecha ≤ hoy FR-044) en
+  `backend/src/modules/transactions/domain/transaction.ts` y
+  `backend/src/modules/transactions/infrastructure/transactionRepository.ts`
+- [ ] T092 [US3] Verificar/configurar la instancia de MongoDB como replica set de un solo nodo
+  (`rs.initiate()`), requisito para las sesiones/transacciones multi-documento de Mongoose que
+  exige research.md §16; documentar el paso en `backend/README.md` (depende de T009)
+- [ ] T093 [US3] Implementar el comando `CreateTransaction` (FR-016/017/044; redondea `amount` a
+  2 decimales con redondeo estándar mitad-hacia-arriba si llega con mayor precisión, FR-043;
+  dentro de una sesión de Mongoose crea la transacción y aplica su efecto sobre
+  `amountARS`/`amountUSD` de la fuente correspondiente, FR-052, research.md §16) en
+  `backend/src/modules/transactions/application/commands/createTransaction.ts` (depende de
+  T071, T091, T092; hace pasar parte de T083, T084)
+- [ ] T094 [US3] Implementar el comando `UpdateTransaction` (FR-018; dentro de una sesión de
+  Mongoose, si `moneySourceId` y/o `currency` cambiaron revierte el efecto sobre la
+  fuente/moneda original y aplica el nuevo sobre la fuente/moneda nueva, FR-052, research.md
+  §16) en `backend/src/modules/transactions/application/commands/updateTransaction.ts` (depende
+  de T071, T091, T092; hace pasar parte de T083, T085)
+- [ ] T095 [US3] Implementar el comando `DeleteTransaction` (FR-019; dentro de una sesión de
+  Mongoose, revierte el efecto sobre el monto de la fuente, FR-052) en
+  `backend/src/modules/transactions/application/commands/deleteTransaction.ts` (depende de
+  T071, T091, T092; hace pasar el resto de T083, T086)
+- [ ] T096 [US3] Implementar `backend/src/modules/transactions/interface/transactionRoutes.ts`
+  (solo POST/PUT/DELETE en esta historia; GET con filtros llega en US5; usa T013
+  `validateSchema`, FR-048, y T025 `requireOwnership` en `PUT/DELETE /transactions/:id` para
+  garantizar 404 ante una transacción de otra cuenta, FR-008/SC-008; depende de T020, T025,
+  T093-T095)
+- [ ] T097 [US3] Montar rutas de transactions en `backend/src/app.ts` (depende de T080, T096)
+- [ ] T098 [US3] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
+  apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx` (depende de T036)
+- [ ] T099 [US3] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
+  botón deshabilitado durante el envío, FR-045; selectores de fuente/categoría poblados con lo
+  dado de alta en US2) en `frontend/src/components/transactions/TransactionForm.tsx` (depende
+  de T098; hace pasar T089)
+- [ ] T100 [US3] Construir el historial/listado base (cuadrante inferior izquierdo de
+  "Transacciones"): renderiza las transacciones, permite editar reutilizando `TransactionForm`
+  en modo edición (incluido cambiar fuente/moneda) y eliminar con diálogo de confirmación
+  (FR-018, FR-019) en `frontend/src/components/transactions/TransactionHistory.tsx` (depende de
+  T094, T095, T099; hace pasar T090). Los filtros por período y la paginación se agregan en US5
+  (T112) sobre este mismo componente.
 
-**Checkpoint**: US1-US3 funcionan de forma independiente y en conjunto.
+**Checkpoint**: US1-US3 funcionan de forma independiente y en conjunto — incluye la interacción
+completa (alta, edición, borrado) desde la UI, con el monto de cada fuente siempre al día.
 
 ---
 
-## Phase 6: User Story 4 - Filtrado y navegación del historial de transacciones (Priority: P2)
+## Phase 6: User Story 4 - Visibilidad de saldos por fuente y consolidados (Priority: P2)
 
-**Goal**: filtro por día/mes/año y paginación de 50, agregados sobre el historial ya construido
-en US2 (T093).
+**Goal**: saldo por fuente/moneda (leído directamente del monto persistido en la fuente) y saldo
+consolidado por moneda (agregado on-demand sobre las fuentes del usuario).
 
-**Independent Test**: con >50 transacciones en varios períodos, cada filtro acota el listado y
-la paginación no repite ni omite registros.
+**Independent Test**: con transacciones ya cargadas (US3), el saldo por fuente y el consolidado
+coinciden con monto inicial + ingresos − egresos.
 
 ### Tests for User Story 4 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T100 [P] [US4] Contract test `GET /transactions` con filtros día/mes/año y paginación en
-  `backend/tests/contract/transactions-list.test.ts`
-- [ ] T101 [P] [US4] Integration test: límite de paginación (50 vs. 51) sin repetir ni omitir en
-  `backend/tests/integration/transactions-pagination.test.ts` (FR-024)
-- [ ] T102 [P] [US4] Test de frontend: cambio de filtros día/mes/año y paginación sin repetidos
-  sobre `TransactionHistory` (`handleRequest` mockeado) en
-  `frontend/__tests__/transactions/transaction-history-filters.test.tsx`
+- [ ] T101 [P] [US4] Contract test `GET /balances` (por fuente y consolidado) en
+  `backend/tests/contract/balances.test.ts`
+- [ ] T102 [P] [US4] Integration test: el saldo por fuente/moneda leído de
+  `money_sources.amountARS`/`amountUSD` coincide con su monto inicial más ingresos menos
+  egresos tras varias transacciones en `backend/tests/integration/balances-calculation.test.ts`
+  (FR-021/FR-022, SC-007)
+- [ ] T103 [P] [US4] Test de frontend: `BalanceTable` renderiza filas por fuente + totales
+  consolidados (`handleRequest` mockeado) en `frontend/__tests__/balances/balance-table.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T103 [US4] Implementar la query `ListTransactions` (filtro día/mes/año, tamaño de página
-  50, orden por defecto: fecha de transacción descendente con `createdAt` descendente como
-  desempate, FR-024) en `backend/src/modules/transactions/application/queries/listTransactions.ts`
-  (FR-023/FR-024; depende de T076; hace pasar T100, T101)
-- [ ] T104 [US4] Agregar `GET /transactions` a
-  `backend/src/modules/transactions/interface/transactionRoutes.ts` (depende de T087, T103)
-- [ ] T105 [US4] Extender `TransactionHistory` (construida en US2, T093) con filtros por
-  día/mes/año y controles de paginación, sin tocar la lógica de edición/borrado ya existente, en
-  `frontend/src/components/transactions/TransactionHistory.tsx` (depende de T093, T103; hace
-  pasar T102)
+- [ ] T104 [US4] Implementar la query `GetBalances` (lee `amountARS`/`amountUSD` de
+  `money_sources` directamente para el saldo por fuente; agregación on-demand solo para el
+  consolidado por moneda, FR-021/FR-022, data-model.md "Saldo") en
+  `backend/src/modules/balances/application/queries/getBalances.ts` (depende de T071; hace
+  pasar T101, T102)
+- [ ] T105 [US4] Implementar `backend/src/modules/balances/interface/balanceRoutes.ts` (usa T013
+  `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T104)
+- [ ] T106 [US4] Construir la tabla de saldos por fuente (cuadrante superior derecho de
+  "Transacciones") en `frontend/src/components/balances/BalanceTable.tsx` (depende de T098;
+  hace pasar T103)
 
 **Checkpoint**: US1-US4 funcionan de forma independiente y en conjunto.
 
 ---
 
-## Phase 7: User Story 5 - Análisis visual de gastos (Priority: P3)
+## Phase 7: User Story 5 - Filtrado y navegación del historial de transacciones (Priority: P2)
+
+**Goal**: filtro por día/mes/año y paginación de 50, agregados sobre el historial ya construido
+en US3 (T100).
+
+**Independent Test**: con >50 transacciones en varios períodos, cada filtro acota el listado y
+la paginación no repite ni omite registros.
+
+### Tests for User Story 5 ⚠️ (escribir primero, deben fallar)
+
+- [ ] T107 [P] [US5] Contract test `GET /transactions` con filtros día/mes/año y paginación en
+  `backend/tests/contract/transactions-list.test.ts`
+- [ ] T108 [P] [US5] Integration test: límite de paginación (50 vs. 51) sin repetir ni omitir en
+  `backend/tests/integration/transactions-pagination.test.ts` (FR-024)
+- [ ] T109 [P] [US5] Test de frontend: cambio de filtros día/mes/año y paginación sin repetidos
+  sobre `TransactionHistory` (`handleRequest` mockeado) en
+  `frontend/__tests__/transactions/transaction-history-filters.test.tsx`
+
+### Implementation for User Story 5
+
+- [ ] T110 [US5] Implementar la query `ListTransactions` (filtro día/mes/año, tamaño de página
+  50, orden por defecto: fecha de transacción descendente con `createdAt` descendente como
+  desempate, FR-024) en `backend/src/modules/transactions/application/queries/listTransactions.ts`
+  (FR-023/FR-024; depende de T091; hace pasar T107, T108)
+- [ ] T111 [US5] Agregar `GET /transactions` a
+  `backend/src/modules/transactions/interface/transactionRoutes.ts` (depende de T096, T110)
+- [ ] T112 [US5] Extender `TransactionHistory` (construida en US3, T100) con filtros por
+  día/mes/año y controles de paginación, sin tocar la lógica de edición/borrado ya existente, en
+  `frontend/src/components/transactions/TransactionHistory.tsx` (depende de T100, T110; hace
+  pasar T109)
+
+**Checkpoint**: US1-US5 funcionan de forma independiente y en conjunto.
+
+---
+
+## Phase 8: User Story 6 - Análisis visual de gastos (Priority: P3)
 
 **Goal**: gráfico de torta de gastos por categoría, filtrable por rango de fechas y categoría.
 
 **Independent Test**: con gastos en varias categorías/fechas, el gráfico por defecto y los
 filtros muestran exactamente los subconjuntos esperados.
 
-### Tests for User Story 5 ⚠️ (escribir primero, deben fallar)
+### Tests for User Story 6 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T106 [P] [US5] Contract test `GET /charts/expenses-by-category` (mes por defecto, rango de
+- [ ] T113 [P] [US6] Contract test `GET /charts/expenses-by-category` (mes por defecto, rango de
   fechas, filtro de categoría) en `backend/tests/contract/charts.test.ts`
-- [ ] T107 [P] [US5] Integration test: la distribución porcentual respeta la regla de redondeo
+- [ ] T114 [P] [US6] Integration test: la distribución porcentual respeta la regla de redondeo
   (1 decimal por categoría, ajuste en la de mayor monto para sumar exactamente 100%) definida en
   `backend/tests/integration/charts-percentage.test.ts` (FR-025)
-- [ ] T108 [P] [US5] Test de frontend: vista por defecto del mes en curso + interacción con
+- [ ] T115 [P] [US6] Test de frontend: vista por defecto del mes en curso + interacción con
   filtros de `ExpensesPieChart` (`handleRequest` mockeado) en
   `frontend/__tests__/charts/expenses-pie-chart.test.tsx`
 
-### Implementation for User Story 5
+### Implementation for User Story 6
 
-- [ ] T109 [US5] Implementar la query `GetExpensesByCategory` (mes en curso calculado en zona
+- [ ] T116 [US6] Implementar la query `GetExpensesByCategory` (mes en curso calculado en zona
   horaria de Argentina, America/Argentina/Buenos_Aires UTC-3 fijo; redondeo de porcentaje a 1
   decimal con ajuste en la categoría de mayor monto para sumar exactamente 100%) en
   `backend/src/modules/charts/application/queries/getExpensesByCategory.ts` (FR-025/FR-026/
-  FR-027; depende de T076; hace pasar T106, T107)
-- [ ] T110 [US5] Implementar `backend/src/modules/charts/interface/chartRoutes.ts` (usa T013
-  `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T109)
-- [ ] T111 [US5] Construir el gráfico de torta con `recharts` (cuadrante inferior derecho de
+  FR-027; depende de T091; hace pasar T113, T114)
+- [ ] T117 [US6] Implementar `backend/src/modules/charts/interface/chartRoutes.ts` (usa T013
+  `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T116)
+- [ ] T118 [US6] Construir el gráfico de torta con `recharts` (cuadrante inferior derecho de
   "Transacciones", filtros de fecha/categoría) en
-  `frontend/src/components/charts/ExpensesPieChart.tsx` (depende de T091; hace pasar T108)
+  `frontend/src/components/charts/ExpensesPieChart.tsx` (depende de T098; hace pasar T115)
 
-**Checkpoint**: US1-US5 funcionan de forma independiente y en conjunto.
+**Checkpoint**: US1-US6 funcionan de forma independiente y en conjunto.
 
 ---
 
-## Phase 8: User Story 6 - Conversión entre USD y ARS (Priority: P3)
+## Phase 9: User Story 7 - Conversión entre USD y ARS (Priority: P3)
 
 **Goal**: conversor USD/ARS en ambas direcciones con los 7 tipos de cambio de dolarapi.com.
 
 **Independent Test**: ingresar montos y elegir tipos de cambio/direcciones, verificar el
 resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valor.
 
-### Tests for User Story 6 ⚠️ (escribir primero, deben fallar)
+### Tests for User Story 7 ⚠️ (escribir primero, deben fallar)
 
-- [ ] T112 [P] [US6] Contract test `GET /converter/rates` + `POST /converter/convert` (incluye
+- [ ] T119 [P] [US7] Contract test `GET /converter/rates` + `POST /converter/convert` (incluye
   502 ante fallo/timeout de la fuente, y ante respuesta 200 sin el tipo de cambio pedido) en
   `backend/tests/contract/converter.test.ts`
-- [ ] T113 [P] [US6] Integration test: timeout de 5000ms a dolarapi.com (mockeado con `nock`)
+- [ ] T120 [P] [US7] Integration test: timeout de 5000ms a dolarapi.com (mockeado con `nock`)
   produce error explícito sin valor de conversión en
   `backend/tests/integration/converter-timeout.test.ts` (FR-032, SC-004)
-- [ ] T114 [P] [US6] Test de frontend: error explícito y sin valor de conversión ante fallo de
+- [ ] T121 [P] [US7] Test de frontend: error explícito y sin valor de conversión ante fallo de
   la fuente (`handleRequest` mockeado con 502) en
   `frontend/__tests__/converter/converter-form.test.tsx` (FR-032, RF30)
 
-### Implementation for User Story 6
+### Implementation for User Story 7
 
-- [ ] T115 [US6] Implementar el cliente de dolarapi.com con timeout de 5000ms en
+- [ ] T122 [US7] Implementar el cliente de dolarapi.com con timeout de 5000ms en
   `backend/src/modules/converter/infrastructure/dolarApiClient.ts` (research.md §8/§9; trata una
   respuesta 200 sin el tipo de cambio solicitado igual que un fallo de la fuente, FR-030/FR-032;
-  hace pasar T113)
-- [ ] T116 [US6] Implementar la query `GetRates` (mapea los 7 tipos a la `casa` de dolarapi.com,
-  FR-029) en `backend/src/modules/converter/application/queries/getRates.ts` (depende de T115)
-- [ ] T117 [US6] Implementar el comando `ConvertAmount` (usa `venta`, FR-030/FR-031) en
-  `backend/src/modules/converter/application/commands/convertAmount.ts` (depende de T115)
-- [ ] T118 [US6] Implementar `backend/src/modules/converter/interface/converterRoutes.ts`
+  hace pasar T120)
+- [ ] T123 [US7] Implementar la query `GetRates` (mapea los 7 tipos a la `casa` de dolarapi.com,
+  FR-029) en `backend/src/modules/converter/application/queries/getRates.ts` (depende de T122)
+- [ ] T124 [US7] Implementar el comando `ConvertAmount` (usa `venta`, FR-030/FR-031) en
+  `backend/src/modules/converter/application/commands/convertAmount.ts` (depende de T122)
+- [ ] T125 [US7] Implementar `backend/src/modules/converter/interface/converterRoutes.ts`
   (contrato de error 502, FR-032; usa T013 `validateSchema`, FR-048) y montarla en
-  `backend/src/app.ts` (depende de T020, T025, T116, T117; hace pasar T112)
-- [ ] T119 [US6] Construir la pantalla Conversor, sección dedicada del dashboard (monto,
+  `backend/src/app.ts` (depende de T020, T025, T123, T124; hace pasar T119)
+- [ ] T126 [US7] Construir la pantalla Conversor, sección dedicada del dashboard (monto,
   selector de dirección, 7 tipos de cambio, resultado, FR-028) en
   `frontend/src/app/conversor/page.tsx` y `frontend/src/components/converter/ConverterForm.tsx`
-  (hace pasar T114)
+  (hace pasar T121)
 
-**Checkpoint**: las 6 historias de usuario funcionan de forma independiente y en conjunto.
+**Checkpoint**: las 7 historias de usuario funcionan de forma independiente y en conjunto.
 
 ---
 
-## Phase 9: Polish & Cross-Cutting Concerns
+## Phase 10: Polish & Cross-Cutting Concerns
 
 **Purpose**: mejoras que afectan a varias historias
 
-- [ ] T120 [P] Ejecutar y validar los 6 escenarios de `quickstart.md` de punta a punta (SC-001),
+- [ ] T127 [P] Ejecutar y validar los 7 escenarios de `quickstart.md` de punta a punta (SC-001),
   incluyendo la validación no funcional (SC-002 a SC-004, SC-006) y que la app permanece
   navegable/funcional con dolarapi.com caído salvo la sección de conversión (FR-035)
-- [ ] T121 [P] Tests unitarios de casos límite del reseteo de bloqueo (éxito vs. expiración de
+- [ ] T128 [P] Tests unitarios de casos límite del reseteo de bloqueo (éxito vs. expiración de
   los 15 min) en `backend/tests/unit/auth/lockout-reset.test.ts`
-- [ ] T122 [P] Verificar el comportamiento responsive de SC-006 (320px y el breakpoint de 500px)
-  en Dashboard, Transacciones y Login/Registro
-- [ ] T123 [P] Verificar el presupuesto de carga de SC-003 (<2s a 10 Mbps) en las rutas
+- [ ] T129 [P] Verificar el comportamiento responsive de SC-006 (320px y el breakpoint de 500px)
+  en Dashboard, Transacciones, Alta de fuente de dinero/categoría y Login/Registro
+- [ ] T130 [P] Verificar el presupuesto de carga de SC-003 (<2s a 10 Mbps) en las rutas
   principales
-- [ ] T124 [P] Contract test de regresión: confirmar que no existe ninguna ruta pública para
+- [ ] T131 [P] Contract test de regresión: confirmar que no existe ninguna ruta pública para
   `security_events` (`GET/POST/PUT/DELETE` responden 404 en cualquier variante razonable de
   path) en `backend/tests/contract/security-log-no-public-access.test.ts` (FR-040). Se corre
   acá, con todos los módulos ya montados, para que el 404 sea significativo y no un falso
   positivo de una app sin rutas.
-- [ ] T125 [P] Contract test de regresión: toda respuesta HTTP incluye el set base de cabeceras
+- [ ] T132 [P] Contract test de regresión: toda respuesta HTTP incluye el set base de cabeceras
   de seguridad (`helmet`, FR-047) y la cookie de sesión emitida en login/webauthn-verify tiene
   los atributos `httpOnly`, `secure` y `sameSite=strict` (FR-046) en
   `backend/tests/contract/security-headers-and-cookie.test.ts`. Se corre acá, con todos los
   módulos ya montados, para cubrir cabeceras en endpoints de todas las historias.
-- [ ] T126 [P] Contract test de regresión: un `body`/`query` con forma inválida (tipo incorrecto,
+- [ ] T133 [P] Contract test de regresión: un `body`/`query` con forma inválida (tipo incorrecto,
   campo inesperado) en cualquier endpoint de escritura responde 400 con el formato de error
   estándar, sin llegar a tocar la base de datos (FR-048) en
   `backend/tests/contract/input-validation-regression.test.ts`
-- [ ] T127 Revisión de seguridad: confirmar que no hay secretos commiteados y que los
+- [ ] T134 Revisión de seguridad: confirmar que no hay secretos commiteados y que los
   `.env.example` reflejan las variables de research.md (Principio IV)
-- [ ] T128 [P] Documentar y verificar la configuración de cifrado en reposo de MongoDB (motor de
+- [ ] T135 [P] Documentar y verificar la configuración de cifrado en reposo de MongoDB (motor de
   almacenamiento cifrado o cifrado gestionado del proveedor elegido en T009) en
   `backend/README.md` (FR-034)
-- [ ] T129 [P] Actualizar instrucciones de ejecución en `AGENTS.md`/README si se agregaron
+- [ ] T136 [P] Actualizar instrucciones de ejecución en `AGENTS.md`/README si se agregaron
   scripts nuevos
 
 ---
@@ -538,25 +599,30 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 - **Setup (Phase 1)**: sin dependencias — puede arrancar de inmediato
 - **Foundational (Phase 2)**: depende de Setup — BLOQUEA todas las historias de usuario
-- **User Stories (Phase 3-8)**: todas dependen de Foundational; entre sí, siguen el orden de
-  prioridad P1 → P2 → P3, pero cada una es independientemente implementable y testeable
-- **Polish (Phase 9)**: depende de las historias que se quieran incluir en el release; T124-T126
-  específicamente requieren que todos los módulos con rutas (US1-US6) ya estén montados
+- **User Stories (Phase 3-9)**: todas dependen de Foundational; entre sí, siguen el orden de
+  prioridad P1 → P2 → P3, pero cada una es independientemente implementable y testeable salvo
+  las dos dependencias cruzadas reales documentadas abajo (US3 → US2, US5 → US3)
+- **Polish (Phase 10)**: depende de las historias que se quieran incluir en el release;
+  T131-T133 específicamente requieren que todos los módulos con rutas (US1-US7) ya estén
+  montados
 
 ### User Story Dependencies
 
 - **US1 (P1)**: sin dependencias de otra historia — es el MVP
-- **US2 (P1)**: reutiliza `RegisterUser` de US1 para sembrar fuentes/categorías (T077); es
-  independientemente testeable con las fuentes/categorías predefinidas. Construye
-  `TransactionHistory` (T093) con edición y borrado incluidos — esto es deliberado: FR-018/
-  FR-019 son parte de esta historia, no de US4.
-- **US3 (P2)**: requiere transacciones existentes (US2) para tener datos que sumar, pero su
-  propio código (query de saldos) no depende del código de US2 más que del `TransactionRepository`
-- **US4 (P2)**: **depende directamente del componente `TransactionHistory` construido en US2**
-  (T093) — T105 lo extiende en vez de crear un componente nuevo, para no duplicar la lógica de
+- **US2 (P1)**: sin dependencia de otra historia además de Foundational; es independientemente
+  testeable dando de alta fuentes/categorías propias (no hay seed automático, FR-009/FR-012)
+- **US3 (P1)**: **depende de US2** para tener al menos una fuente de dinero y una categoría con
+  las que registrar una transacción real — reutiliza `MoneySourceRepository`/`CategoryRepository`
+  creados en US2. También depende de T092 (replica set de Mongo) para que el recálculo atómico
+  de FR-052 funcione. Construye `TransactionHistory` (T100) con edición y borrado incluidos —
+  esto es deliberado: FR-018/FR-019 son parte de esta historia, no de US5.
+- **US4 (P2)**: requiere transacciones existentes (US3) para tener montos que reflejar, pero su
+  propio código (`GetBalances`) solo depende de `MoneySourceRepository` (ya actualizado por US3)
+- **US5 (P2)**: **depende directamente del componente `TransactionHistory` construido en US3**
+  (T100) — T112 lo extiende en vez de crear un componente nuevo, para no duplicar la lógica de
   edición/borrado. Esta es una dependencia real entre historias, no solo de datos.
-- **US5 (P3)**: requiere transacciones existentes (US2); reutiliza el `TransactionRepository`
-- **US6 (P3)**: totalmente independiente — solo depende de Foundational
+- **US6 (P3)**: requiere transacciones existentes (US3); reutiliza el `TransactionRepository`
+- **US7 (P3)**: totalmente independiente — solo depende de Foundational
 
 ### Within Each User Story
 
@@ -571,10 +637,12 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 - Todas las tareas [P] de Setup pueden correr en paralelo
 - Todas las tareas [P] de Foundational pueden correr en paralelo (dentro de la Phase 2)
-- Una vez completada Foundational, US1 y US6 pueden desarrollarse en paralelo de inmediato; US3
-  y US5 pueden empezar su backend en paralelo con US2 pero su frontend depende del shell de
-  "Transacciones" (T091, US2); US4 no puede empezar su tarea de frontend (T105) hasta que T093
-  (US2) exista
+- Una vez completada Foundational, US1, US2 y US7 pueden desarrollarse en paralelo de inmediato
+  (ninguna depende de otra historia); US3 no puede cerrarse funcionalmente hasta que US2 tenga
+  al menos una fuente/categoría de prueba, aunque su código puede prepararse en paralelo; US4 y
+  US6 pueden empezar su backend en paralelo con US3 pero su frontend depende del shell de
+  "Transacciones" (T098, US3); US5 no puede empezar su tarea de frontend (T112) hasta que T100
+  (US3) exista
 - Dentro de cada historia, todos los tests marcados [P] pueden correr en paralelo entre sí
 
 ---
@@ -615,19 +683,21 @@ Task: "Entidad PasskeyCredential en backend/src/modules/auth/domain/passkeyCrede
 
 1. Setup + Foundational → base lista
 2. US1 → probar de forma independiente → demo (MVP: acceso seguro)
-3. US2 → probar de forma independiente → demo (alta, edición y borrado de movimientos)
-4. US3 → probar de forma independiente → demo (saldos)
-5. US4 → probar de forma independiente → demo (filtros/paginación sobre el historial de US2)
-6. US5 → probar de forma independiente → demo (gráficos)
-7. US6 → probar de forma independiente → demo (conversor)
-8. Polish
+3. US2 → probar de forma independiente → demo (alta de fuentes de dinero y categorías propias)
+4. US3 → probar de forma independiente → demo (alta, edición y borrado de movimientos, con el
+   monto de cada fuente siempre recalculado)
+5. US4 → probar de forma independiente → demo (saldos)
+6. US5 → probar de forma independiente → demo (filtros/paginación sobre el historial de US3)
+7. US6 → probar de forma independiente → demo (gráficos)
+8. US7 → probar de forma independiente → demo (conversor)
+9. Polish
 
 ### Parallel Team Strategy
 
 Con varios desarrolladores: Setup + Foundational en conjunto; luego un dev en US1 mientras otro
-prepara el andamiaje de US2 (puede empezar entidades/repos sin bloquear, aunque el seed de datos
-de fábrica —T077— requiere que `RegisterUser` de US1 exista, y US4 no puede tocar su tarea de
-frontend hasta que `TransactionHistory` de US2 exista).
+arranca US2 (fuentes/categorías, sin dependencias); US3 no puede darse por completa
+funcionalmente hasta que US2 tenga datos reales para operar, y US5 no puede tocar su tarea de
+frontend hasta que `TransactionHistory` de US3 exista.
 
 ---
 
@@ -643,5 +713,5 @@ frontend hasta que `TransactionHistory` de US2 exista).
 - Commitear después de cada tarea o grupo lógico
 - Detenerse en cada checkpoint para validar la historia de forma independiente
 - Evitar: tareas vagas, conflictos de mismo archivo entre tareas [P], dependencias cruzadas
-  entre historias que rompan la independencia (la única dependencia cruzada real y deliberada es
-  US4 → T093 de US2, documentada arriba)
+  entre historias que rompan la independencia (las únicas dependencias cruzadas reales y
+  deliberadas son US3 → US2 para tener datos reales y US5 → T100 de US3, documentadas arriba)

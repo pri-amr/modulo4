@@ -57,9 +57,13 @@ respuesta sin el tipo de cambio pedido (FR-032, RF30); sesión de 1 día con log
 (FR-037, FR-041); bloqueo de 15 min tras 5 intentos fallidos, por cuenta (FR-036); protección
 CSRF vía cookie `sameSite=strict`, sin token adicional (FR-046); cabeceras de seguridad HTTP
 estándar en toda respuesta (FR-047); validación de esquema estricto de todo input externo antes
-de la capa de persistencia (FR-048); TLS terminado en la capa de despliegue, fuera del alcance
-funcional del código (Assumptions); UI sin scroll horizontal desde 320px (SC-006); 48 requisitos
-funcionales (FR-001 a FR-048) sin detalles de implementación adicionales fuera de los ya fijados
+de la capa de persistencia (FR-048); sin catálogo predefinido de fuentes de dinero ni categorías
+— arrancan vacíos por cuenta (FR-009, FR-012); toda fuente de dinero requiere campo `virtual`
+booleano y montos iniciales en ARS/USD ≥0 al darse de alta (FR-049–FR-051), recalculados
+automáticamente en cada transacción, incluido el cruce de fuente/moneda al editar (FR-018,
+FR-052, research.md §16); TLS terminado en la capa de despliegue, fuera del alcance funcional
+del código (Assumptions); UI sin scroll horizontal desde 320px (SC-006); 52 requisitos
+funcionales (FR-001 a FR-052) sin detalles de implementación adicionales fuera de los ya fijados
 por AGENTS.md/constitución.
 
 **Scale/Scope**: una cuenta = un usuario, sin cuentas compartidas (Assumptions); historial de
@@ -109,8 +113,14 @@ puntual):
   muestra un logo/isotipo de la app (temática financiera); la derecha contiene el formulario en
   columna con los inputs requeridos y, según la pantalla, los botones "Ingreso" + "Ingreso con
   passkey" (login) o "Registrar" + "Registro con passkey" (registro).
-- **Alta de categoría / fuente de dinero**: formulario centrado vertical y horizontalmente en
-  la pantalla, campos distribuidos en dos columnas.
+- **Alta de categoría**: formulario centrado vertical y horizontalmente en la pantalla, un único
+  campo de nombre (FR-013).
+- **Alta de fuente de dinero**: mismo layout centrado, campos distribuidos en dos columnas:
+  nombre, campo "virtual" como desplegable con las opciones "Sí" (billetera virtual) / "No"
+  (banco físico) (FR-049), monto inicial en ARS y monto inicial en USD (FR-050/FR-051, ambos
+  numéricos, aceptan 0 pero no vacío ni negativo). Sin campo de edición de monto en ningún lado
+  de la UI: el monto solo cambia por el recálculo automático al registrar transacciones
+  (FR-052).
 - **Transacciones** (reemplaza "Alta de transacción" en el menú del dashboard; concentra las
   Historias 2, 3 y 4): una única pantalla dividida en cuadrantes.
   - Mitad superior, dividida en dos: **izquierda** = formulario de alta de transacción (en
@@ -152,6 +162,12 @@ No hay violaciones que requieran `Complexity Tracking`.
 de datos y los contratos no introducen ninguna llamada a IA, ningún secreto embebido, ninguna
 caché de cotizaciones, y mantienen `security_events` fuera de cualquier contrato expuesto al
 usuario final. Los siete chequeos de la tabla se mantienen en **PASS/N/A** sin cambios.
+
+**Re-check tras el rediseño de fuentes de dinero/categorías** (FR-008 a FR-015, FR-049 a
+FR-052): el monto de una fuente (`amountARS`/`amountUSD`) se recalcula exclusivamente dentro de
+la misma transacción de Mongo que escribe la `transaction` asociada (research.md §16) — nunca se
+edita a mano ni se deriva de una estimación, reforzando el Principio III (fidelidad a la fuente
+de verdad) en vez de tensionarlo. Ningún chequeo cambia de resultado.
 
 ## Project Structure
 

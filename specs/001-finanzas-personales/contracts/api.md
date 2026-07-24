@@ -62,20 +62,37 @@ Lista las passkeys del usuario autenticado, con `name` (FR-006). **200**: `[{ "i
 
 ## Fuentes de dinero (`/money-sources`)
 
+No hay seed ni catálogo predefinido (FR-009): `GET` devuelve `[]` para una cuenta recién creada.
+
 ### `GET /money-sources`
-**200**: `[{ "id", "name", "isPredefined" }]` (incluye predefinidas + propias).
+**200**: `[{ "id", "name", "virtual": boolean, "amountARS": number, "amountUSD": number }]`.
 
 ### `POST /money-sources`
-**Body**: `{ "name": string (≤60) }`
-**201**: `{ "id", "name" }`
+**Body**: `{ "name": string (≤60), "virtual": boolean, "amountARS": number (≥0), "amountUSD":
+number (≥0) }`
+**201**: `{ "id", "name", "virtual", "amountARS", "amountUSD" }`
 **409**: nombre exactamente duplicado (FR-011).
-**400**: nombre vacío o > 60 caracteres.
+**400**: nombre vacío o > 60 caracteres (FR-010); `virtual` ausente (FR-049); `amountARS` o
+`amountUSD` ausente o negativo (FR-050/FR-051) — `field` en el error indica cuál.
 
-*(No hay `PUT`/`DELETE`: FR-015 los prohíbe explícitamente.)*
+*(No hay `PUT`/`DELETE`: FR-015 los prohíbe explícitamente. `amountARS`/`amountUSD` cambian
+únicamente vía el recálculo automático de `POST/PUT/DELETE /transactions`, nunca por este
+endpoint.)*
 
 ## Categorías (`/categories`)
 
-Mismo contrato que `/money-sources` (`GET`, `POST` únicamente), reglas FR-013/FR-014/FR-015.
+No hay seed ni catálogo predefinido (FR-012): `GET` devuelve `[]` para una cuenta recién creada.
+
+### `GET /categories`
+**200**: `[{ "id", "name" }]`.
+
+### `POST /categories`
+**Body**: `{ "name": string (≤60) }`
+**201**: `{ "id", "name" }`
+**409**: nombre exactamente duplicado (FR-014).
+**400**: nombre vacío o > 60 caracteres (FR-013).
+
+*(No hay `PUT`/`DELETE`: FR-015 los prohíbe explícitamente.)*
 
 ---
 
@@ -98,8 +115,10 @@ boolean }`.
 **502**: fallo al persistir; el frontend conserva los datos ingresados para reintentar (FR-020).
 
 ### `PUT /transactions/:id`
-Mismo body que `POST`. **200**: `Transaction` actualizada, reflejada en listado y saldos
-(FR-018). **404** si no pertenece al usuario.
+Mismo body que `POST`; puede cambiar cualquier campo, incluidos `moneySourceId` y `currency`
+(FR-018). **200**: `Transaction` actualizada, reflejada en listado y saldos. Si `moneySourceId`
+y/o `currency` cambiaron, revierte el efecto sobre la fuente/moneda original y lo aplica sobre
+la nueva (FR-052, research.md §16). **404** si no pertenece al usuario.
 
 ### `DELETE /transactions/:id`
 Requiere confirmación ya resuelta en el cliente antes de llamar (FR-019). **204**. **404** si no
@@ -117,7 +136,9 @@ pertenece al usuario.
   "consolidated": { "ARS": 12345.67, "USD": 890.12 }
 }
 ```
-Calculado on-demand (FR-021, FR-022); ver data-model.md "Saldo (derivado)".
+`bySource` se lee directamente de `money_sources.amountARS`/`amountUSD` (FR-021, ya incluye el
+monto inicial + recálculo acumulado); `consolidated` se agrega on-demand sumando esos montos por
+moneda (FR-022). Ver data-model.md "Saldo".
 
 ---
 

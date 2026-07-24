@@ -183,8 +183,28 @@
   código repetido de mapeo por repositorio, sin beneficio adicional dado que `zod` ya cubre la
   validación de esquema en el borde HTTP, FR-048, research.md §12).
 
+## 16. Consistencia entre transacciones y el monto persistido de la fuente (FR-011, FR-052)
+
+- **Decision**: `CreateTransaction`, `UpdateTransaction` y `DeleteTransaction` escriben el
+  documento de `transactions` y actualizan `amountARS`/`amountUSD` del `money_sources` afectado
+  dentro de la misma sesión/transacción de Mongoose (`withTransaction`), incluyendo el caso de
+  `UpdateTransaction` que cambia `moneySourceId` y/o `currency`: revierte el efecto sobre la
+  fuente/moneda original y aplica el nuevo efecto sobre la fuente/moneda nueva, todo en la misma
+  transacción de base de datos.
+- **Rationale**: FR-052 exige que el monto de la fuente quede recalculado en cada escritura de
+  transacción; sin una transacción de Mongo, una falla a mitad de camino dejaría el monto de la
+  fuente desincronizado de las transacciones reales (violación de Principio III, fidelidad a la
+  fuente de verdad). El volumen de la app (un usuario por cuenta) hace viable el costo de una
+  transacción multi-documento sin necesidad de un patrón de consistencia eventual.
+- **Alternatives considered**: recalcular el monto de la fuente on-demand por agregación en cada
+  lectura (rechazado: FR-011/FR-052 piden explícitamente un campo persistido y recalculado, no
+  uno derivado en la query; además duplicaría el costo de agregación en cada `GET /balances` y
+  en cada selector de fuente del formulario de transacción); actualizar el monto de forma no
+  transaccional con reconciliación periódica (rechazado: introduce una ventana de datos
+  financieros incorrectos, inaceptable dado el Principio III).
+
 ## Unknowns resueltos
 
 Todos los ítems marcados como `NEEDS CLARIFICATION` en el Technical Context de `plan.md` quedan
-resueltos por las decisiones 1 a 15 de este documento. No quedan unknowns pendientes para
+resueltos por las decisiones 1 a 16 de este documento. No quedan unknowns pendientes para
 Phase 1.
