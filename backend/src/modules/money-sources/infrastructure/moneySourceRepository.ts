@@ -1,4 +1,4 @@
-import mongoose, { Schema, type ClientSession } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import type { Currency } from "../../../shared/domain/currency";
 import type { MoneySource, MoneySourceRepository } from "../domain/moneySource";
 
@@ -45,20 +45,14 @@ export class MongoMoneySourceRepository implements MoneySourceRepository {
     return doc ? toDomain(doc) : null;
   }
 
-  // FR-052: incrementa/decrementa el campo de la moneda correspondiente dentro de la
-  // sesión de Mongo recibida (research.md §16), en vez de leer+recalcular+sobrescribir,
+  // FR-052: incrementa/decrementa el campo de la moneda correspondiente con un `$inc`
+  // atómico de un solo documento (research.md §16), en vez de leer+recalcular+sobrescribir,
   // para que sea seguro ante escrituras concurrentes sobre la misma fuente.
-  async adjustAmount(
-    id: string,
-    currency: Currency,
-    delta: number,
-    session?: unknown,
-  ): Promise<void> {
+  async adjustAmount(id: string, currency: Currency, delta: number): Promise<void> {
     const field = currency === "ARS" ? "amountARS" : "amountUSD";
     await MoneySourceModel.updateOne(
       { _id: id },
       { $inc: { [field]: mongoose.Types.Decimal128.fromString(delta.toFixed(2)) } },
-      { session: session as ClientSession | undefined },
     );
   }
 }

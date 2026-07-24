@@ -1,4 +1,4 @@
-import mongoose, { Schema, type ClientSession } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import type { Currency } from "../../../shared/domain/currency";
 import type {
   CreateTransactionRecord,
@@ -61,23 +61,22 @@ function toDomain(doc: TransactionDocument): Transaction {
 }
 
 export class MongoTransactionRepository implements TransactionRepository {
-  async create(record: CreateTransactionRecord, session?: unknown): Promise<Transaction> {
-    const [doc] = await TransactionModel.create(
-      [
-        {
-          userId: record.userId,
-          type: record.type,
-          amount: mongoose.Types.Decimal128.fromString(record.amount.toFixed(2)),
-          currency: record.currency,
-          moneySourceId: record.moneySourceId,
-          categoryId: record.categoryId,
-          date: record.date,
-          description: record.description,
-        },
-      ],
-      { session: session as ClientSession | undefined },
-    );
+  async create(record: CreateTransactionRecord): Promise<Transaction> {
+    const doc = await TransactionModel.create({
+      userId: record.userId,
+      type: record.type,
+      amount: mongoose.Types.Decimal128.fromString(record.amount.toFixed(2)),
+      currency: record.currency,
+      moneySourceId: record.moneySourceId,
+      categoryId: record.categoryId,
+      date: record.date,
+      description: record.description,
+    });
 
     return toDomain(doc);
+  }
+
+  async delete(id: string): Promise<void> {
+    await TransactionModel.deleteOne({ _id: id });
   }
 }

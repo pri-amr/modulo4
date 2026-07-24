@@ -29,6 +29,9 @@ export interface CreateTransactionRecord {
 
 // Puerto del dominio: la capa de aplicación depende de esta interfaz, nunca del driver
 // de persistencia concreto. La implementación Mongo vive en infrastructure/.
+// `delete` existe para el rollback de compensación de CreateTransaction (research.md §16),
+// no solo para el futuro DeleteTransaction (US3, borrado explícito con confirmación FR-019).
 export interface TransactionRepository {
-  create(record: CreateTransactionRecord, session?: unknown): Promise<Transaction>;
+  create(record: CreateTransactionRecord): Promise<Transaction>;
+  delete(id: string): Promise<void>;
 }
