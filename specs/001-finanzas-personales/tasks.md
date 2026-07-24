@@ -394,14 +394,17 @@ y el monto de la fuente reflejan exactamente los datos.
 - [ ] T098 [US3] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
   apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx` (depende de T036)
 - [ ] T099 [US3] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
-  botón deshabilitado durante el envío, FR-045; selectores de fuente/categoría poblados con lo
+  botón deshabilitado durante el envío y `Loader` de pantalla completa vía `LoadingProvider`
+  mientras la petición está en curso, FR-045; selectores de fuente/categoría poblados con lo
   dado de alta en US2) en `frontend/src/components/transactions/TransactionForm.tsx` (depende
-  de T098; hace pasar T089)
+  de T098, T031, T032; hace pasar T089)
 - [ ] T100 [US3] Construir el historial/listado base (cuadrante inferior izquierdo de
-  "Transacciones"): renderiza las transacciones, permite editar reutilizando `TransactionForm`
-  en modo edición (incluido cambiar fuente/moneda) y eliminar con diálogo de confirmación
-  (FR-018, FR-019) en `frontend/src/components/transactions/TransactionHistory.tsx` (depende de
-  T094, T095, T099; hace pasar T090). Los filtros por período y la paginación se agregan en US5
+  "Transacciones"): renderiza las transacciones (nombre de fuente/categoría y descripción
+  truncados con "…" si no entran en el ancho disponible, con tooltip al hover mostrando el
+  contenido completo), permite editar reutilizando `TransactionForm` en modo edición (incluido
+  cambiar fuente/moneda) y eliminar con diálogo de confirmación (FR-018, FR-019) en
+  `frontend/src/components/transactions/TransactionHistory.tsx` (depende de T094, T095, T099;
+  hace pasar T090). Los filtros por período y la paginación se agregan en US5
   (T112) sobre este mismo componente.
 
 **Checkpoint**: US1-US3 funcionan de forma independiente y en conjunto — incluye la interacción
@@ -438,8 +441,9 @@ coinciden con monto inicial + ingresos − egresos.
 - [ ] T105 [US4] Implementar `backend/src/modules/balances/interface/balanceRoutes.ts` (usa T013
   `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T104)
 - [ ] T106 [US4] Construir la tabla de saldos por fuente (cuadrante superior derecho de
-  "Transacciones") en `frontend/src/components/balances/BalanceTable.tsx` (depende de T098;
-  hace pasar T103)
+  "Transacciones"; nombre de fuente truncado con "…" y tooltip al hover si no entra en el ancho
+  disponible) en `frontend/src/components/balances/BalanceTable.tsx` (depende de T098; hace
+  pasar T103)
 
 **Checkpoint**: US1-US4 funcionan de forma independiente y en conjunto.
 
@@ -490,25 +494,31 @@ filtros muestran exactamente los subconjuntos esperados.
 ### Tests for User Story 6 ⚠️ (escribir primero, deben fallar)
 
 - [ ] T113 [P] [US6] Contract test `GET /charts/expenses-by-category` (mes por defecto, rango de
-  fechas, filtro de categoría) en `backend/tests/contract/charts.test.ts`
+  fechas, filtro de categoría, `currency` explícito, y `currency` omitido resuelve a la moneda
+  con más gastos —o la única con gastos— e informa `availableCurrencies`, FR-053) en
+  `backend/tests/contract/charts.test.ts`
 - [ ] T114 [P] [US6] Integration test: la distribución porcentual respeta la regla de redondeo
   (1 decimal por categoría, ajuste en la de mayor monto para sumar exactamente 100%) definida en
   `backend/tests/integration/charts-percentage.test.ts` (FR-025)
-- [ ] T115 [P] [US6] Test de frontend: vista por defecto del mes en curso + interacción con
-  filtros de `ExpensesPieChart` (`handleRequest` mockeado) en
+- [ ] T115 [P] [US6] Test de frontend: vista por defecto del mes en curso, selector ARS/USD
+  (oculto si solo hay una moneda con gastos, visible y funcional si hay ambas) e interacción con
+  filtros de fecha/categoría de `ExpensesPieChart` (`handleRequest` mockeado) en
   `frontend/__tests__/charts/expenses-pie-chart.test.tsx`
 
 ### Implementation for User Story 6
 
 - [ ] T116 [US6] Implementar la query `GetExpensesByCategory` (mes en curso calculado en zona
-  horaria de Argentina, America/Argentina/Buenos_Aires UTC-3 fijo; redondeo de porcentaje a 1
-  decimal con ajuste en la categoría de mayor monto para sumar exactamente 100%) en
-  `backend/src/modules/charts/application/queries/getExpensesByCategory.ts` (FR-025/FR-026/
-  FR-027; depende de T091; hace pasar T113, T114)
+  horaria de Argentina, America/Argentina/Buenos_Aires UTC-3 fijo; el cálculo es siempre de una
+  única moneda, nunca combina ARS y USD; si no se pide `currency` explícita, resuelve a la moneda
+  con más gastos en el período —o la única con gastos— e informa `availableCurrencies`, FR-053;
+  redondeo de porcentaje a 1 decimal con ajuste en la categoría de mayor monto para sumar
+  exactamente 100%) en `backend/src/modules/charts/application/queries/getExpensesByCategory.ts`
+  (FR-025/FR-026/FR-027/FR-053; depende de T091; hace pasar T113, T114)
 - [ ] T117 [US6] Implementar `backend/src/modules/charts/interface/chartRoutes.ts` (usa T013
   `validateSchema`, FR-048) y montarla en `backend/src/app.ts` (depende de T020, T025, T116)
 - [ ] T118 [US6] Construir el gráfico de torta con `recharts` (cuadrante inferior derecho de
-  "Transacciones", filtros de fecha/categoría) en
+  "Transacciones", filtros de fecha/categoría, selector ARS/USD que solo se muestra cuando
+  `availableCurrencies` trae ambas monedas, FR-053) en
   `frontend/src/components/charts/ExpensesPieChart.tsx` (depende de T098; hace pasar T115)
 
 **Checkpoint**: US1-US6 funcionan de forma independiente y en conjunto.
@@ -590,6 +600,14 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
   `backend/README.md` (FR-034)
 - [ ] T136 [P] Actualizar instrucciones de ejecución en `AGENTS.md`/README si se agregaron
   scripts nuevos
+- [ ] T137 [P] Bug fix (detectado en checklist review, FR-038 fail-open): en
+  `backend/src/shared/http/requireOwnership.ts`, el `await onCrossAccountAccessDenied(...)` no
+  está protegido — si el registro de auditoría falla, la excepción se propaga en vez del 404
+  esperado (fail-closed accidental). Envolver esa llamada en try/catch para que un fallo de
+  auditoría nunca impida lanzar el `AppError(404, ...)`. Extender
+  `backend/tests/unit/shared/requireOwnership.test.ts` con un caso donde
+  `onCrossAccountAccessDenied` rechaza y el 404 igual se lanza (ya redactado, pendiente de
+  aplicar) (FR-038)
 
 ---
 

@@ -144,13 +144,18 @@ moneda (FR-022). Ver data-model.md "Saldo".
 
 ## Gráficos (`/charts`)
 
-### `GET /charts/expenses-by-category?from=YYYY-MM-DD&to=YYYY-MM-DD&category=id`
-Sin filtros: gastos del mes en curso, calculado en zona horaria de Argentina
+### `GET /charts/expenses-by-category?currency=ARS&from=YYYY-MM-DD&to=YYYY-MM-DD&category=id`
+El cálculo siempre es por una única moneda por vez; nunca combina montos de ARS y USD en el
+mismo gráfico (FR-025). `currency` (`ARS`|`USD`) es opcional: si se omite, el servidor usa la
+moneda con mayor cantidad de gastos en el período vigente (o la única con gastos, FR-053). Sin
+filtros de fecha/categoría: gastos del mes en curso, calculado en zona horaria de Argentina
 (America/Argentina/Buenos_Aires, UTC-3 fijo, FR-025). Con `from`/`to`: rango elegido (FR-026).
 Con `category`: acota a una categoría (FR-027).
-**200**: `{ "items": [{ "categoryId", "categoryName", "amount", "percentage" }] }`. `percentage`
-redondeado a 1 decimal por categoría, con ajuste en la de mayor monto para que la suma total dé
-exactamente 100% (FR-025).
+**200**: `{ "currency": "ARS"|"USD", "availableCurrencies": ["ARS", "USD"], "items": [{
+"categoryId", "categoryName", "amount", "percentage" }] }`. `availableCurrencies` lista las
+monedas con al menos un gasto en el período, para que el frontend arme el selector (FR-053).
+`percentage` redondeado a 1 decimal por categoría, con ajuste en la de mayor monto para que la
+suma total dé exactamente 100% (FR-025).
 
 ---
 

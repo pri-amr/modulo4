@@ -67,6 +67,8 @@
 - Q: ¿Se puede editar la fuente de dinero y/o la moneda de una transacción existente, o esos dos campos quedan fijos una vez creada? → A: Se puede editar cualquier campo, incluida fuente de dinero y moneda; el recálculo revierte el efecto en la fuente/moneda original y lo aplica en la nueva.
 - Q: ¿El monto inicial de una fuente de dinero (ARS o USD) puede ser negativo, o debe ser siempre mayor o igual a cero? → A: Debe ser mayor o igual a cero; no se acepta un monto inicial negativo.
 - Q: ¿Se permite que el monto de una fuente de dinero quede negativo tras una transacción, o el sistema debe bloquear el guardado de una transacción que lo dejaría en negativo? → A: Se permite saldo negativo; el sistema no valida fondos disponibles, solo registra el movimiento y refleja el monto resultante.
+- Q: El gráfico de gastos por categoría (FR-025), ¿cómo debe tratar un mes con egresos tanto en ARS como en USD? → A: Un gráfico por moneda: el cálculo porcentual se hace por separado para ARS y para USD, nunca combinando montos de distinta moneda en la misma torta.
+- Q: Si el registro interno de un evento de seguridad (FR-038) falla al escribirse, ¿qué debe pasar con la operación de autenticación que lo disparó? → A: La autenticación sigue igual (fail-open); solo se pierde ese registro puntual de auditoría.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -271,24 +273,32 @@ correctamente y que la paginación no repite ni omite registros.
 
 ### User Story 6 - Análisis visual de gastos (Priority: P3)
 
-Un usuario autenticado visualiza gráficos de sus gastos, filtrables por rango de fechas y por
-categoría, para entender en qué y cuándo gasta más.
+Un usuario autenticado visualiza gráficos de sus gastos, filtrables por rango de fechas, por
+categoría y por moneda, para entender en qué y cuándo gasta más.
 
 **Why this priority**: Aporta valor analítico adicional sobre datos que ya existen gracias a la
 Historia 3; no bloquea el uso diario de registrar y consultar movimientos.
 
-**Independent Test**: Con gastos cargados en varias categorías y fechas, se puede verificar de
-forma aislada que el gráfico por defecto y los filtros de fecha/categoría muestran exactamente
-los subconjuntos de datos esperados.
+**Independent Test**: Con gastos cargados en varias categorías, fechas y monedas, se puede
+verificar de forma aislada que el gráfico por defecto y los filtros de fecha/categoría/moneda
+muestran exactamente los subconjuntos de datos esperados, sin combinar montos de distinta
+moneda en un mismo gráfico.
 
 **Acceptance Scenarios**:
 
-1. **Given** el usuario navega a la sección de gráficos sin filtros aplicados, **When** la
-   sección termina de cargar, **Then** se muestra un gráfico de torta con la distribución
-   porcentual de gastos por categoría del mes en curso.
-2. **Given** transacciones registradas en distintos períodos, **When** el usuario selecciona un
-   rango de fechas, **Then** el gráfico muestra únicamente los gastos de ese rango.
-3. **Given** gastos registrados en múltiples categorías, **When** el usuario selecciona una
+1. **Given** el usuario navega a la sección de gráficos sin filtros aplicados y tiene gastos en
+   una sola moneda ese mes, **When** la sección termina de cargar, **Then** se muestra un
+   gráfico de torta con la distribución porcentual de gastos por categoría del mes en curso en
+   esa moneda.
+2. **Given** el usuario tiene gastos en ARS y en USD dentro del mismo mes, **When** la sección de
+   gráficos termina de cargar sin filtros aplicados, **Then** se muestra por defecto el gráfico
+   de la moneda con mayor cantidad de gastos registrados ese mes, y el usuario puede elegir ver
+   el gráfico de la otra moneda; en ningún caso se combinan montos de ARS y USD en un mismo
+   gráfico.
+3. **Given** transacciones registradas en distintos períodos, **When** el usuario selecciona un
+   rango de fechas, **Then** el gráfico (de la moneda elegida) muestra únicamente los gastos de
+   ese rango.
+4. **Given** gastos registrados en múltiples categorías, **When** el usuario selecciona una
    categoría específica, **Then** el gráfico muestra únicamente la información de esa categoría.
 
 ---
@@ -332,7 +342,10 @@ conversión.
   duplicar ni perder movimientos.
 - ¿Qué pasa si un usuario intenta acceder, editar o eliminar una transacción, fuente de dinero,
   categoría o passkey que pertenece a otra cuenta (por ejemplo, manipulando un identificador en
-  la URL o en una petición)? El sistema no debe exponer ni modificar datos de otra cuenta.
+  la URL o en una petición)? El sistema no debe exponer ni modificar datos de otra cuenta: MUST
+  responder de forma uniforme para los cuatro tipos de recurso como si el recurso no existiera
+  (404), nunca con un código que confirme su existencia bajo otra cuenta (por ejemplo, 403); este
+  mismo evento MUST quedar registrado como `cross_account_access_denied` (FR-038).
 - ¿Qué pasa si el usuario da de alta una fuente de dinero o categoría con un nombre casi
   idéntico a uno existente pero con una diferencia mínima (mayúsculas, espacio o typo)? Se
   acepta como entrada válida y distinta: solo se bloquean los nombres exactamente duplicados.
@@ -354,6 +367,15 @@ conversión.
   varias passkeys en dispositivos distintos.
 - ¿Qué pasa si el usuario filtra el listado de transacciones por un período sin ningún
   movimiento? El listado se muestra vacío en vez de mostrar un error.
+- ¿Qué pasa si el usuario filtra el gráfico de gastos (por rango de fechas o por categoría) y no
+  hay ningún gasto en ese subconjunto? El gráfico se muestra vacío (sin porciones), de forma
+  análoga al listado de transacciones vacío, en vez de mostrar un error.
+- ¿Qué pasa si todos los gastos del período mostrado pertenecen a una sola categoría? El gráfico
+  de torta muestra una única porción que ocupa el 100%.
+- ¿Qué pasa si el nombre de una fuente de dinero, una categoría, o la descripción de una
+  transacción es demasiado largo para el ancho disponible (320px u otro)? El texto se trunca con
+  puntos suspensivos ("…") en pantalla, y al pasar el mouse por encima (hover) se muestra el
+  contenido completo en una ventana emergente (tooltip).
 - ¿Qué pasa si el usuario intenta convertir un monto igual a cero o negativo, o deja el campo
   de monto vacío? El sistema no debe entregar una conversión y debe indicar que el monto es
   inválido.
@@ -397,7 +419,9 @@ conversión.
 - **FR-038**: El sistema MUST registrar internamente los eventos de seguridad relevantes
   (intentos de autenticación fallidos, bloqueos temporales de cuenta, e intentos denegados de
   acceso a datos de otra cuenta) con fecha, hora y cuenta involucrada, para permitir su revisión
-  posterior.
+  posterior. Si el registro de un evento falla al escribirse, el sistema MUST continuar
+  procesando la operación que lo disparó como si el registro hubiera tenido éxito (fail-open); un
+  fallo de auditoría MUST NOT impedir ni revertir un login, bloqueo u otra operación legítima.
 - **FR-039**: El sistema MUST conservar cada registro de evento de seguridad durante 30 días
   desde su creación, y MUST permitir su eliminación o rotación una vez transcurrido ese plazo.
 - **FR-040**: El sistema MUST NOT exponer a la cuenta de usuario final ninguna vía para leer,
@@ -476,7 +500,8 @@ conversión.
   sin volver a completarlos.
 - **FR-045**: El sistema MUST deshabilitar el control de guardar mientras una operación de alta
   o edición de transacción está en curso, para impedir el envío duplicado por doble clic o
-  doble tap.
+  doble tap, y MUST mostrar un indicador de carga a pantalla completa que impida cualquier otra
+  interacción del usuario con la página hasta que la operación resuelva (éxito o error).
 
 **Saldos**
 
@@ -503,11 +528,17 @@ conversión.
 - **FR-025**: El sistema MUST mostrar, por defecto al ingresar a la sección de gráficos y sin
   filtros aplicados, un gráfico de torta con la distribución porcentual de gastos por categoría
   del mes en curso, calculado en la zona horaria de Argentina (America/Argentina/Buenos_Aires,
-  UTC-3 fijo, sin horario de verano). El porcentaje de cada categoría se redondea a 1 decimal;
-  si la suma de los porcentajes redondeados no da exactamente 100%, se ajusta el porcentaje de
-  la categoría de mayor monto para que la suma total sea exactamente 100%.
+  UTC-3 fijo, sin horario de verano). El cálculo se hace por separado para cada moneda (ARS y
+  USD); el sistema MUST NOT combinar montos de distintas monedas en un mismo gráfico. El
+  porcentaje de cada categoría se redondea a 1 decimal; si la suma de los porcentajes redondeados
+  no da exactamente 100%, se ajusta el porcentaje de la categoría de mayor monto para que la suma
+  total sea exactamente 100%.
 - **FR-026**: El sistema MUST permitir filtrar el gráfico de gastos por rango de fechas.
 - **FR-027**: El sistema MUST permitir filtrar el gráfico de gastos por categoría.
+- **FR-053**: El sistema MUST permitir al usuario elegir la moneda (ARS o USD) del gráfico de
+  gastos cuando existan gastos en ambas monedas ese mes; MUST mostrar por defecto el gráfico de
+  la moneda con mayor cantidad de gastos registrados en el período vigente (o la única moneda con
+  gastos, si solo hay una).
 
 **Conversor de divisas**
 
@@ -526,10 +557,13 @@ conversión.
 
 **Seguridad y datos**
 
-- **FR-033**: El sistema MUST proteger las contraseñas mediante hasheo con un algoritmo y
-  parámetros equivalentes o superiores a los recomendados por OWASP para el estado del arte
-  vigente (nunca en texto plano).
-- **FR-034**: El sistema MUST almacenar los datos financieros del usuario cifrados en reposo.
+- **FR-033**: El sistema MUST proteger las contraseñas mediante hasheo con bcrypt (factor de
+  costo ≥ 12) o argon2id con parámetros equivalentes o superiores a los recomendados por OWASP
+  (nunca en texto plano).
+- **FR-034**: El sistema MUST almacenar cifrados en reposo, mediante AES-256 o un algoritmo
+  equivalente, los datos financieros del usuario: transacciones (monto, moneda, fecha,
+  descripción) y los montos (`amountARS`/`amountUSD`) de sus fuentes de dinero. No alcanza a
+  credenciales de acceso (contraseña, clave pública de passkey), que se protegen por FR-033.
 - **FR-035**: El sistema MUST seguir siendo navegable y funcional aunque la fuente de
   cotizaciones no esté disponible; solo la sección de conversión se ve afectada.
 - **FR-046**: El sistema MUST proteger toda operación que modifique estado (transacciones,
@@ -601,6 +635,8 @@ conversión.
 
 ## Assumptions
 
+- La interfaz de usuario es exclusivamente en español (Argentina); no se contempla
+  internacionalización ni selector de idioma en esta versión.
 - La aplicación es de un único usuario por cuenta; no existen cuentas compartidas ni perfiles
   familiares (fuera de alcance en esta versión).
 - No hay integración directa con APIs bancarias ni sincronización automática de movimientos:

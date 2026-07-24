@@ -128,8 +128,10 @@ puntual):
     fila por fuente).
   - Mitad inferior, dividida en dos: **izquierda** = historial/listado de transacciones con
     filtros por día/mes/año y paginación de 50 (FR-023/FR-024); **derecha** = gráfico de gastos
-    (FR-025 a FR-027), visible desde el primer ingreso o egreso cargado, mostrando por defecto
-    el porcentaje gastado por categoría sobre el total del mes en curso.
+    (FR-025 a FR-027, FR-053), visible desde el primer ingreso o egreso cargado, mostrando por
+    defecto el porcentaje gastado por categoría sobre el total del mes en curso, en la moneda con
+    más gastos ese mes; si hay gastos en ambas monedas, un selector ARS/USD (visible solo en ese
+    caso) permite alternar entre ambos gráficos, que nunca se combinan en uno solo.
   - Responsive: igual criterio que el dashboard — los cuatro cuadrantes se apilan en una sola
     columna (alta → historial → saldos → gráfico) cuando el viewport es < 500px.
 
