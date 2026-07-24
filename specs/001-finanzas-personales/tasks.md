@@ -37,22 +37,22 @@ según `plan.md` → Project Structure.
 
 **Purpose**: inicialización de ambos proyectos según `plan.md`
 
-- [ ] T001 Crear el esqueleto de carpetas `backend/` y `frontend/` según el árbol de
+- [X] T001 Crear el esqueleto de carpetas `backend/` y `frontend/` según el árbol de
   `plan.md` → Project Structure (módulos DDD vacíos en `backend/src/modules/`, carpetas de
   frontend en `frontend/src/`, incluyendo `components/categories/` y `components/money-sources/`)
-- [ ] T002 [P] Inicializar `backend/package.json` (Express, TypeScript, `mongoose`, `argon2`,
+- [X] T002 [P] Inicializar `backend/package.json` (Express, TypeScript, `mongoose`, `argon2`,
   `jsonwebtoken`, `@simplewebauthn/server`, `axios`, `zod` — validación de esquema FR-048,
   `helmet` — cabeceras de seguridad FR-047) y `backend/tsconfig.json`
-- [ ] T003 [P] Inicializar `frontend/package.json` (Next.js, React, TypeScript, Tailwind, `axios`,
+- [X] T003 [P] Inicializar `frontend/package.json` (Next.js, React, TypeScript, Tailwind, `axios`,
   `next-auth`, `@simplewebauthn/browser`, `recharts`, `@heroicons/react`) y `frontend/tsconfig.json`
-- [ ] T004 [P] Configurar `frontend/tailwind.config.ts`: modo oscuro por defecto (`darkMode:
+- [X] T004 [P] Configurar `frontend/tailwind.config.ts`: modo oscuro por defecto (`darkMode:
   'class'`, aplicada en el root layout), paleta neutra (`slate`) + token de color de acento,
   utilidad de esquinas 10px para inputs
-- [ ] T005 [P] Configurar ESLint/Prettier en `backend/.eslintrc.cjs` y `frontend/.eslintrc.cjs`
-- [ ] T006 [P] Configurar Jest + `supertest` + `nock` en `backend/jest.config.ts`
-- [ ] T007 [P] Configurar Jest + `@testing-library/react` (entorno jsdom) en
+- [X] T005 [P] Configurar ESLint/Prettier en `backend/.eslintrc.cjs` y `frontend/.eslintrc.cjs`
+- [X] T006 [P] Configurar Jest + `supertest` + `nock` en `backend/jest.config.ts`
+- [X] T007 [P] Configurar Jest + `@testing-library/react` (entorno jsdom) en
   `frontend/jest.config.ts`
-- [ ] T008 [P] Crear `backend/.env.example` y `frontend/.env.example` con `MONGODB_URI`,
+- [X] T008 [P] Crear `backend/.env.example` y `frontend/.env.example` con `MONGODB_URI`,
   `SESSION_JWT_SECRET`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `DOLARAPI_BASE_URL`,
   `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `BACKEND_API_URL` — solo nombres, sin valores reales
   (Principio IV)
