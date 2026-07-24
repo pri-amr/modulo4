@@ -340,18 +340,19 @@ y el monto de la fuente reflejan exactamente los datos.
   `amountUSD` de la fuente exactamente en el monto ingresado en
   `backend/tests/integration/transactions-balance-recalc.test.ts` (FR-052)
 - [ ] T085 [P] [US3] Integration test: editar una transacción cambiando su fuente de dinero y/o
-  su moneda revierte el efecto sobre la fuente/moneda original y lo aplica sobre la nueva, de
-  forma atómica, en `backend/tests/integration/transactions-edit-cross-source.test.ts` (FR-018,
-  FR-052, research.md §16)
+  su moneda revierte el efecto sobre la fuente/moneda original y lo aplica sobre la nueva en
+  `backend/tests/integration/transactions-edit-cross-source.test.ts` (FR-018, FR-052,
+  research.md §16)
 - [ ] T086 [P] [US3] Integration test: eliminar una transacción revierte su efecto sobre el
   monto de la fuente en `backend/tests/integration/transactions-delete-recalc.test.ts` (FR-052)
 - [ ] T087 [P] [US3] Integration test: un egreso que deja el monto de una fuente en negativo se
   guarda igual, sin bloqueo, en
   `backend/tests/integration/transactions-negative-balance.test.ts` (Edge Case, clarificación
   2026-07-24)
-- [ ] T088 [P] [US3] Integration test: ante un fallo de guardado se conserva la posibilidad de
-  reintentar sin perder los datos ingresados en
-  `backend/tests/integration/transactions-save-failure.test.ts` (FR-020)
+- [X] T088 [P] [US3] Test unitario: si el ajuste del monto de la fuente falla tras crear la
+  transacción, `CreateTransaction` revierte (borra) la transacción recién creada antes de
+  propagar el error — rollback de compensación, research.md §16 — en
+  `backend/tests/unit/transactions/createTransaction.test.ts` (FR-020, FR-052)
 - [ ] T089 [P] [US3] Test de frontend: validación, prevención de doble envío (FR-045),
   conservación de datos ante fallo (FR-020), y selectores de fuente/categoría vacíos si la
   cuenta todavía no dio de alta ninguna (FR-009, FR-012) de `TransactionForm` en
@@ -363,28 +364,27 @@ y el monto de la fuente reflejan exactamente los datos.
 
 ### Implementation for User Story 3
 
-- [ ] T091 [P] [US3] Implementar entidad de dominio + repositorio `Transaction` (precisión de 2
+- [X] T091 [P] [US3] Implementar entidad de dominio + repositorio `Transaction` (precisión de 2
   decimales FR-043, fecha ≤ hoy FR-044) en
   `backend/src/modules/transactions/domain/transaction.ts` y
   `backend/src/modules/transactions/infrastructure/transactionRepository.ts`
-- [ ] T092 [US3] Verificar/configurar la instancia de MongoDB como replica set de un solo nodo
-  (`rs.initiate()`), requisito para las sesiones/transacciones multi-documento de Mongoose que
-  exige research.md §16; documentar el paso en `backend/README.md` (depende de T009)
-- [ ] T093 [US3] Implementar el comando `CreateTransaction` (FR-016/017/044; redondea `amount` a
+- [X] T093 [US3] Implementar el comando `CreateTransaction` (FR-016/017/044; redondea `amount` a
   2 decimales con redondeo estándar mitad-hacia-arriba si llega con mayor precisión, FR-043;
-  dentro de una sesión de Mongoose crea la transacción y aplica su efecto sobre
-  `amountARS`/`amountUSD` de la fuente correspondiente, FR-052, research.md §16) en
+  crea la transacción y ajusta `amountARS`/`amountUSD` de la fuente correspondiente en una
+  segunda escritura, con rollback de compensación —borra la transacción recién creada— si ese
+  ajuste falla, FR-052, research.md §16) en
   `backend/src/modules/transactions/application/commands/createTransaction.ts` (depende de
-  T071, T091, T092; hace pasar parte de T083, T084)
-- [ ] T094 [US3] Implementar el comando `UpdateTransaction` (FR-018; dentro de una sesión de
-  Mongoose, si `moneySourceId` y/o `currency` cambiaron revierte el efecto sobre la
-  fuente/moneda original y aplica el nuevo sobre la fuente/moneda nueva, FR-052, research.md
-  §16) en `backend/src/modules/transactions/application/commands/updateTransaction.ts` (depende
-  de T071, T091, T092; hace pasar parte de T083, T085)
-- [ ] T095 [US3] Implementar el comando `DeleteTransaction` (FR-019; dentro de una sesión de
-  Mongoose, revierte el efecto sobre el monto de la fuente, FR-052) en
+  T071, T091; hace pasar parte de T083, T084)
+- [ ] T094 [US3] Implementar el comando `UpdateTransaction` (FR-018; si `moneySourceId` y/o
+  `currency` cambiaron, revierte el efecto sobre la fuente/moneda original y aplica el nuevo
+  sobre la fuente/moneda nueva mediante escrituras secuenciales, con rollback de compensación
+  ante un fallo intermedio, FR-052, research.md §16) en
+  `backend/src/modules/transactions/application/commands/updateTransaction.ts` (depende de
+  T071, T091; hace pasar parte de T083, T085)
+- [ ] T095 [US3] Implementar el comando `DeleteTransaction` (FR-019; revierte el efecto sobre el
+  monto de la fuente, con rollback de compensación si ese ajuste falla, FR-052) en
   `backend/src/modules/transactions/application/commands/deleteTransaction.ts` (depende de
-  T071, T091, T092; hace pasar el resto de T083, T086)
+  T071, T091; hace pasar el resto de T083, T086)
 - [ ] T096 [US3] Implementar `backend/src/modules/transactions/interface/transactionRoutes.ts`
   (solo POST/PUT/DELETE en esta historia; GET con filtros llega en US5; usa T013
   `validateSchema`, FR-048, y T025 `requireOwnership` en `PUT/DELETE /transactions/:id` para
@@ -631,9 +631,10 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
   testeable dando de alta fuentes/categorías propias (no hay seed automático, FR-009/FR-012)
 - **US3 (P1)**: **depende de US2** para tener al menos una fuente de dinero y una categoría con
   las que registrar una transacción real — reutiliza `MoneySourceRepository`/`CategoryRepository`
-  creados en US2. También depende de T092 (replica set de Mongo) para que el recálculo atómico
-  de FR-052 funcione. Construye `TransactionHistory` (T100) con edición y borrado incluidos —
-  esto es deliberado: FR-018/FR-019 son parte de esta historia, no de US5.
+  creados en US2. El recálculo de FR-052 no requiere replica set de Mongo (research.md §16:
+  escritura secuencial con rollback de compensación). Construye `TransactionHistory` (T100) con
+  edición y borrado incluidos — esto es deliberado: FR-018/FR-019 son parte de esta historia, no
+  de US5.
 - **US4 (P2)**: requiere transacciones existentes (US3) para tener montos que reflejar, pero su
   propio código (`GetBalances`) solo depende de `MoneySourceRepository` (ya actualizado por US3)
 - **US5 (P2)**: **depende directamente del componente `TransactionHistory` construido en US3**

@@ -166,10 +166,11 @@ caché de cotizaciones, y mantienen `security_events` fuera de cualquier contrat
 usuario final. Los siete chequeos de la tabla se mantienen en **PASS/N/A** sin cambios.
 
 **Re-check tras el rediseño de fuentes de dinero/categorías** (FR-008 a FR-015, FR-049 a
-FR-052): el monto de una fuente (`amountARS`/`amountUSD`) se recalcula exclusivamente dentro de
-la misma transacción de Mongo que escribe la `transaction` asociada (research.md §16) — nunca se
-edita a mano ni se deriva de una estimación, reforzando el Principio III (fidelidad a la fuente
-de verdad) en vez de tensionarlo. Ningún chequeo cambia de resultado.
+FR-052): el monto de una fuente (`amountARS`/`amountUSD`) se recalcula exclusivamente mediante
+el flujo de escritura secuencial con rollback de compensación descripto en research.md §16
+(sin transacciones de Mongo ni replica set) — nunca se edita a mano ni se deriva de una
+estimación, reforzando el Principio III (fidelidad a la fuente de verdad) en vez de
+tensionarlo. Ningún chequeo cambia de resultado.
 
 ## Project Structure
 

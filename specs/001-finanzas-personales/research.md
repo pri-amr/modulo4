@@ -186,22 +186,39 @@
 ## 16. Consistencia entre transacciones y el monto persistido de la fuente (FR-011, FR-052)
 
 - **Decision**: `CreateTransaction`, `UpdateTransaction` y `DeleteTransaction` escriben el
-  documento de `transactions` y actualizan `amountARS`/`amountUSD` del `money_sources` afectado
-  dentro de la misma sesión/transacción de Mongoose (`withTransaction`), incluyendo el caso de
-  `UpdateTransaction` que cambia `moneySourceId` y/o `currency`: revierte el efecto sobre la
-  fuente/moneda original y aplica el nuevo efecto sobre la fuente/moneda nueva, todo en la misma
-  transacción de base de datos.
+  documento de `transactions` y luego actualizan `amountARS`/`amountUSD` del `money_sources`
+  afectado como dos escrituras secuenciales (no una transacción de Mongo), con **rollback de
+  compensación a nivel de aplicación**: si la segunda escritura (el ajuste del monto) falla, se
+  revierte la primera (se borra la transacción recién creada, o se reaplica el efecto anterior
+  en `UpdateTransaction`) antes de propagar el error. `UpdateTransaction`, cuando cambia
+  `moneySourceId` y/o `currency`, sigue el mismo patrón: revierte el efecto sobre la
+  fuente/moneda original y aplica el nuevo efecto sobre la fuente/moneda nueva, compensando ante
+  cualquier fallo intermedio.
 - **Rationale**: FR-052 exige que el monto de la fuente quede recalculado en cada escritura de
-  transacción; sin una transacción de Mongo, una falla a mitad de camino dejaría el monto de la
-  fuente desincronizado de las transacciones reales (violación de Principio III, fidelidad a la
-  fuente de verdad). El volumen de la app (un usuario por cuenta) hace viable el costo de una
-  transacción multi-documento sin necesidad de un patrón de consistencia eventual.
-- **Alternatives considered**: recalcular el monto de la fuente on-demand por agregación en cada
-  lectura (rechazado: FR-011/FR-052 piden explícitamente un campo persistido y recalculado, no
-  uno derivado en la query; además duplicaría el costo de agregación en cada `GET /balances` y
-  en cada selector de fuente del formulario de transacción); actualizar el monto de forma no
-  transaccional con reconciliación periódica (rechazado: introduce una ventana de datos
-  financieros incorrectos, inaceptable dado el Principio III).
+  transacción, y una falla a mitad de camino no debe dejarlo desincronizado (Principio III,
+  fidelidad a la fuente de verdad). MongoDB solo soporta transacciones multi-documento ACID
+  sobre un replica set (no sobre una instancia standalone), y el despliegue objetivo de esta app
+  corre contra un servidor MongoDB existente del equipo, sin replica set configurado. Dado que la
+  aplicación es de un único usuario por cuenta (Assumptions) — sin escrituras concurrentes reales
+  sobre el mismo documento — el riesgo que una transacción de Mongo mitigaría (una isla de
+  inconsistencia por una escritura concurrente en curso) no aplica aquí; el único riesgo real es
+  que el proceso falle a mitad de las dos escrituras secuenciales, y el rollback de compensación
+  cubre ese caso en la práctica totalidad de los escenarios (una excepción controlada durante el
+  segundo `await`). Queda sin cubrir únicamente la ventana de milisegundos en la que el propio
+  proceso Node muere entre ambas escrituras — un caso excepcional, aceptable para el volumen y
+  criticidad de esta app, y muy por debajo del riesgo que ya aceptaba la alternativa de
+  reconciliación periódica descartada abajo.
+- **Alternatives considered**: transacción de Mongo real vía sesión de Mongoose
+  (`session.withTransaction`) (rechazada: exige reconfigurar el servidor MongoDB del equipo como
+  replica set, un cambio operativo no deseado sobre infraestructura ya desplegada, para ganar
+  robustez marginal frente al rollback de compensación dado el perfil de uso — un solo usuario
+  por cuenta, sin concurrencia real); recalcular el monto de la fuente on-demand por agregación
+  en cada lectura (rechazado: FR-011/FR-052 piden explícitamente un campo persistido y
+  recalculado, no uno derivado en la query; además duplicaría el costo de agregación en cada
+  `GET /balances` y en cada selector de fuente del formulario de transacción); actualizar el
+  monto de forma no transaccional con reconciliación periódica (rechazado: introduce una ventana
+  de datos financieros incorrectos mucho más amplia que la del rollback de compensación,
+  inaceptable dado el Principio III).
 
 ## Unknowns resueltos
 

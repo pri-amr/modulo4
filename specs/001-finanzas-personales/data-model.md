@@ -60,8 +60,10 @@ No existe seed ni catálogo predefinido: la colección arranca vacía para todo 
 | `createdAt` | datetime | — |
 
 **Reglas de negocio**:
-- FR-052: `amountARS`/`amountUSD` se recalculan (no se sobrescriben libremente) dentro de la
-  misma transacción de Mongo que escribe la `transaction` asociada — ver research.md §16.
+- FR-052: `amountARS`/`amountUSD` se recalculan (no se sobrescriben libremente) mediante un
+  ajuste atómico de un solo documento (`$inc`) inmediatamente después de escribir la
+  `transaction` asociada, con rollback de compensación si ese ajuste falla — ver research.md
+  §16.
 - El monto puede quedar negativo tras un egreso; el sistema no valida fondos disponibles
   (clarificación 2026-07-24, Edge Cases de spec.md).
 
@@ -95,10 +97,11 @@ No existe seed ni catálogo predefinido: la colección arranca vacía para todo 
 **Reglas de negocio**:
 - FR-018/FR-019: edición y borrado solo sobre transacciones del propio `userId`.
 - FR-018/FR-052: `moneySourceId` y `currency` son editables. Crear, editar o eliminar una
-  transacción recalcula `amountARS`/`amountUSD` de `money_sources` (research.md §16); si una
-  edición cambia `moneySourceId` y/o `currency`, se revierte el efecto sobre la fuente/moneda
-  original y se aplica el nuevo efecto sobre la fuente/moneda nueva, en la misma transacción de
-  Mongo que persiste el cambio.
+  transacción recalcula `amountARS`/`amountUSD` de `money_sources` (research.md §16) mediante
+  escrituras secuenciales con rollback de compensación ante un fallo intermedio, no una
+  transacción de Mongo (no se requiere replica set); si una edición cambia `moneySourceId` y/o
+  `currency`, se revierte el efecto sobre la fuente/moneda original y se aplica el nuevo efecto
+  sobre la fuente/moneda nueva, compensando ante cualquier fallo a mitad de camino.
 - Edge Case (última escritura gana): no se implementa control de concurrencia optimista; el
   último `updatedAt` persistido es el estado válido.
 - Índice recomendado: `{ userId: 1, date: -1 }` para filtros por período (FR-023) y paginación
