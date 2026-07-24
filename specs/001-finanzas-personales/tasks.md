@@ -67,64 +67,64 @@ según `plan.md` → Project Structure.
 
 ### Backend
 
-- [ ] T009 Implementar la conexión a MongoDB en `backend/src/shared/infrastructure/db.ts`,
+- [X] T009 Implementar la conexión a MongoDB en `backend/src/shared/infrastructure/db.ts`,
   usando un motor/instancia con cifrado en reposo habilitado (encrypted storage engine
   self-hosted o cifrado gestionado del proveedor, research.md §4, FR-034; verificación final en
   T128)
-- [ ] T010 [P] Implementar el loader de configuración de entorno con validación en
+- [X] T010 [P] Implementar el loader de configuración de entorno con validación en
   `backend/src/shared/config/env.ts`
-- [ ] T011 [P] Implementar el formato de error estándar y el middleware de manejo de errores
+- [X] T011 [P] Implementar el formato de error estándar y el middleware de manejo de errores
   Express en `backend/src/shared/http/errorHandler.ts` (contracts/api.md, formato de error)
-- [ ] T012 [P] Test unitario del middleware `validateSchema` (esquema `zod` válido pasa; esquema
+- [X] T012 [P] Test unitario del middleware `validateSchema` (esquema `zod` válido pasa; esquema
   inválido responde 400 con el formato de error estándar y `field` indicando la ruta del campo)
   en `backend/tests/unit/shared/validateSchema.test.ts` — escribir primero, debe fallar (FR-048)
-- [ ] T013 [P] Implementar el middleware `validateSchema(schema)` en
+- [X] T013 [P] Implementar el middleware `validateSchema(schema)` en
   `backend/src/shared/http/validateSchema.ts` (FR-048, research.md §12; hace pasar T012) — se
   monta en cada ruta de escritura (`interface/*Routes.ts`) antes de despachar el Command/Query
   correspondiente
-- [ ] T014 [P] Test unitario del bus de comandos/queries (resuelve el handler correcto, lanza
+- [X] T014 [P] Test unitario del bus de comandos/queries (resuelve el handler correcto, lanza
   error ante un tipo no registrado) en `backend/tests/unit/shared/cqrs-bus.test.ts` — escribir
   primero, debe fallar
-- [ ] T015 [P] Implementar el bus de comandos y el bus de queries in-process en
+- [X] T015 [P] Implementar el bus de comandos y el bus de queries in-process en
   `backend/src/shared/cqrs/bus.ts` (research.md §10; hace pasar T014)
-- [ ] T016 [P] Test unitario de emisión/verificación/expiración del token de sesión en
+- [X] T016 [P] Test unitario de emisión/verificación/expiración del token de sesión en
   `backend/tests/unit/shared/sessionToken.test.ts` — escribir primero, debe fallar
-- [ ] T017 Implementar la emisión/verificación del JWT de sesión en
+- [X] T017 Implementar la emisión/verificación del JWT de sesión en
   `backend/src/shared/auth/sessionToken.ts` (research.md §3; hace pasar T016)
-- [ ] T018 [P] Test unitario de `setSessionCookie`/`clearSessionCookie` (verifica los atributos
+- [X] T018 [P] Test unitario de `setSessionCookie`/`clearSessionCookie` (verifica los atributos
   `httpOnly`, `secure` y `sameSite=strict` — única protección CSRF exigida, sin token
   adicional) en `backend/tests/unit/shared/sessionCookie.test.ts` — escribir primero, debe
   fallar (FR-046)
-- [ ] T019 Implementar `setSessionCookie`/`clearSessionCookie` en
+- [X] T019 Implementar `setSessionCookie`/`clearSessionCookie` en
   `backend/src/shared/http/sessionCookie.ts` (FR-046, research.md §14; depende de T017; hace
   pasar T018) — usado por cualquier ruta que emita o invalide la cookie de sesión (login,
   webauthn-verify, logout)
-- [ ] T020 Implementar el middleware `requireSession` (adjunta `req.userId` desde la cookie de
+- [X] T020 Implementar el middleware `requireSession` (adjunta `req.userId` desde la cookie de
   sesión, 401 si falta/es inválida) en `backend/src/shared/http/requireSession.ts` (depende de
   T017)
-- [ ] T021 Implementar el repositorio Mongo de `security_events` con índice TTL a 30 días en
+- [X] T021 Implementar el repositorio Mongo de `security_events` con índice TTL a 30 días en
   `backend/src/modules/security-log/infrastructure/securityEventRepository.ts` (FR-039,
   data-model.md; depende de T009)
-- [ ] T022 [P] Test unitario del handler `RecordSecurityEvent` en
+- [X] T022 [P] Test unitario del handler `RecordSecurityEvent` en
   `backend/tests/unit/security-log/recordSecurityEvent.test.ts` — escribir primero, debe fallar
-- [ ] T023 Implementar el comando `RecordSecurityEvent` en
+- [X] T023 Implementar el comando `RecordSecurityEvent` en
   `backend/src/modules/security-log/application/commands/recordSecurityEvent.ts` (FR-038;
   depende de T021; hace pasar T022). Nota: este módulo NUNCA recibe una carpeta `interface/`
   (sin rutas Express) — es la forma en que se cumple FR-040; la ausencia se verifica en T124.
-- [ ] T024 [P] Test unitario de `requireOwnership` (404 ante mismatch de `userId`, dispara el
+- [X] T024 [P] Test unitario de `requireOwnership` (404 ante mismatch de `userId`, dispara el
   log de auditoría, FR-008/SC-008) en `backend/tests/unit/shared/requireOwnership.test.ts` —
   escribir primero, debe fallar
-- [ ] T025 Implementar el helper `requireOwnership` en
+- [X] T025 Implementar el helper `requireOwnership` en
   `backend/src/shared/http/requireOwnership.ts` (FR-008; depende de T020, T023; hace pasar T024)
-- [ ] T026 [P] Test unitario de las cabeceras de seguridad HTTP montadas vía `helmet()` (verifica
+- [X] T026 [P] Test unitario de las cabeceras de seguridad HTTP montadas vía `helmet()` (verifica
   la presencia de al menos `Content-Security-Policy`, `X-Content-Type-Options` y
   `X-Frame-Options` en la respuesta) en `backend/tests/unit/shared/securityHeaders.test.ts` —
   escribir primero, debe fallar (FR-047)
-- [ ] T027 Bootstrap de la app Express (`helmet()` montado globalmente para cabeceras de
+- [X] T027 Bootstrap de la app Express (`helmet()` montado globalmente para cabeceras de
   seguridad HTTP FR-047, hace pasar T026; parseo JSON, montaje de error handler, placeholder de
   rutas bajo el prefijo `/api/v1` fijado en contracts/api.md — todos los módulos montan sus
   rutas ahí) en `backend/src/app.ts` (depende de T026)
-- [ ] T028 [P] Bootstrap del entrypoint del servidor (lee `PORT`, conecta Mongo antes de
+- [X] T028 [P] Bootstrap del entrypoint del servidor (lee `PORT`, conecta Mongo antes de
   escuchar) en `backend/src/server.ts` (depende de T009, T027)
 
 ### Frontend
