@@ -1,7 +1,8 @@
 # PRD-001: Aplicación Web de Finanzas Personales — Centraliza el control de ingresos y egresos en múltiples bancos y efectivo (ARS/USD), con acceso seguro mediante passkeys o contraseña
 
-Versión: 2.1
-Fecha: 15-07-2026
+Versión: 2.2
+
+Fecha: 24-07-2026
 
 ---
 
@@ -41,72 +42,76 @@ Los usuarios argentinos administran dinero distribuido en múltiples bancos loca
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-08 | El sistema debe ofrecer al usuario una lista inicial predefinida de fuentes de dinero (Santander, BNA, Macro, Lemon, Brubank, Efectivo) al crear la cuenta |
-| RF-09 | El sistema debe permitir al usuario dar de alta una fuente de dinero propia |
+| RF-08 | El sistema no debe ofrecer una lista predefinida de fuentes de dinero; el catálogo de fuentes de dinero de un usuario recién registrado debe estar vacío hasta que el usuario dé de alta al menos una fuente propia |
+| RF-09 | El sistema debe permitir al usuario dar de alta una fuente de dinero propia indicando un nombre |
 | RF-10 | El sistema debe validar que no exista ya una fuente de dinero con el mismo nombre antes de permitir darla de alta |
+| RF-11 | El sistema debe requerir que el usuario indique, al dar de alta una fuente de dinero, un campo booleano "virtual" (true si es una billetera virtual, false si es un banco físico), presentado en el formulario como un desplegable con las opciones "Sí" (virtual) y "No" (físico) |
+| RF-12 | El sistema debe requerir que el usuario ingrese un monto inicial en ARS (numérico, puede ser 0) al dar de alta una fuente de dinero |
+| RF-13 | El sistema debe requerir que el usuario ingrese un monto inicial en USD (numérico, puede ser 0) al dar de alta una fuente de dinero |
+| RF-14 | El sistema debe recalcular el monto en ARS y el monto en USD de una fuente de dinero cada vez que se registra, edita o elimina una transacción asociada a esa fuente, sumando los ingresos y restando los egresos de la moneda correspondiente sobre el monto vigente de esa fuente en esa moneda |
 
 ### Categorías
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-11 | El sistema debe ofrecer al usuario una lista inicial predefinida de categorías (comida, transporte, sueldo, freelance) al crear la cuenta |
-| RF-12 | El sistema debe permitir al usuario dar de alta una categoría propia |
-| RF-13 | El sistema debe validar que no exista ya una categoría con el mismo nombre antes de permitir darla de alta |
+| RF-15 | El sistema no debe ofrecer una lista predefinida de categorías; el catálogo de categorías de un usuario recién registrado debe estar vacío hasta que el usuario dé de alta al menos una categoría propia |
+| RF-16 | El sistema debe permitir al usuario dar de alta una categoría propia |
+| RF-17 | El sistema debe validar que no exista ya una categoría con el mismo nombre antes de permitir darla de alta |
 
 ### Gestión de transacciones
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-14 | El sistema debe permitir registrar una transacción de tipo egreso |
-| RF-15 | El sistema debe permitir registrar una transacción de tipo ingreso |
-| RF-16 | El sistema debe requerir que cada transacción tenga un monto numérico |
-| RF-17 | El sistema debe requerir que cada transacción esté asociada a una fuente de dinero existente (predefinida o dada de alta por el usuario) |
-| RF-18 | El sistema debe requerir que cada transacción esté asociada a una moneda: ARS o USD |
-| RF-19 | El sistema debe requerir que cada transacción esté asociada a una categoría existente (predefinida o dada de alta por el usuario) |
-| RF-20 | El sistema debe requerir que cada transacción esté asociada a una fecha en formato DD-MM-YYYY |
-| RF-21 | El sistema debe requerir que cada transacción tenga una descripción de texto libre ingresada por el usuario |
-| RF-22 | El sistema debe permitir editar una transacción existente |
-| RF-23 | El sistema debe permitir eliminar una transacción existente con confirmación explícita del usuario |
-| RF-24 | El sistema debe validar que el monto de una transacción sea un número mayor a cero antes de permitir guardarla |
-| RF-25 | El sistema debe validar que todos los campos obligatorios (monto, fuente, moneda, categoría, fecha, descripción) estén completos antes de permitir guardar una transacción |
-| RF-26 | El sistema debe mostrar un mensaje de error si el guardado de una transacción falla, sin perder los datos ingresados por el usuario |
+| RF-18 | El sistema debe permitir registrar una transacción de tipo egreso |
+| RF-19 | El sistema debe permitir registrar una transacción de tipo ingreso |
+| RF-20 | El sistema debe requerir que cada transacción tenga un monto numérico |
+| RF-21 | El sistema debe requerir que cada transacción esté asociada a una fuente de dinero existente, dada de alta previamente por el usuario |
+| RF-22 | El sistema debe requerir que cada transacción esté asociada a una moneda: ARS o USD |
+| RF-23 | El sistema debe requerir que cada transacción esté asociada a una categoría existente, dada de alta previamente por el usuario |
+| RF-24 | El sistema debe requerir que cada transacción esté asociada a una fecha en formato DD-MM-YYYY |
+| RF-25 | El sistema debe requerir que cada transacción tenga una descripción de texto libre ingresada por el usuario |
+| RF-26 | El sistema debe permitir editar una transacción existente |
+| RF-27 | El sistema debe permitir eliminar una transacción existente con confirmación explícita del usuario |
+| RF-28 | El sistema debe validar que el monto de una transacción sea un número mayor a cero antes de permitir guardarla |
+| RF-29 | El sistema debe validar que todos los campos obligatorios (monto, fuente, moneda, categoría, fecha, descripción) estén completos antes de permitir guardar una transacción |
+| RF-30 | El sistema debe mostrar un mensaje de error si el guardado de una transacción falla, sin perder los datos ingresados por el usuario |
 
 ### Saldos
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-27 | El sistema debe mostrar el saldo disponible de forma separada por cada fuente de dinero (banco o efectivo) |
-| RF-28 | El sistema debe mostrar el saldo total consolidado en ARS y en USD de forma independiente |
+| RF-31 | El sistema debe mostrar el saldo disponible de forma separada por cada fuente de dinero (banco o efectivo), expresado como el monto en ARS y el monto en USD de esa fuente |
+| RF-32 | El sistema debe mostrar el saldo total consolidado en ARS y en USD de forma independiente |
 
 ### Vistas por período y paginación
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-29 | El sistema debe permitir filtrar el listado de transacciones por día |
-| RF-30 | El sistema debe permitir filtrar el listado de transacciones por mes |
-| RF-31 | El sistema debe permitir filtrar el listado de transacciones por año |
-| RF-32 | El sistema debe paginar el listado de transacciones mostrando un máximo de 50 registros por página |
-| RF-33 | El sistema debe permitir navegar entre páginas del listado de transacciones |
+| RF-33 | El sistema debe permitir filtrar el listado de transacciones por día |
+| RF-34 | El sistema debe permitir filtrar el listado de transacciones por mes |
+| RF-35 | El sistema debe permitir filtrar el listado de transacciones por año |
+| RF-36 | El sistema debe paginar el listado de transacciones mostrando un máximo de 50 registros por página |
+| RF-37 | El sistema debe permitir navegar entre páginas del listado de transacciones |
 
 ### Gráficos
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-34 | El sistema debe mostrar un gráfico de gastos filtrable por rango de fechas |
-| RF-35 | El sistema debe mostrar un gráfico de gastos filtrable por tipo o categoría de gasto |
-| RF-36 | El sistema debe mostrar como vista por defecto de la sección de gráficos un gráfico de torta con la distribución porcentual de gastos por categoría del mes en curso |
+| RF-38 | El sistema debe mostrar un gráfico de gastos filtrable por rango de fechas |
+| RF-39 | El sistema debe mostrar un gráfico de gastos filtrable por tipo o categoría de gasto |
+| RF-40 | El sistema debe mostrar como vista por defecto de la sección de gráficos un gráfico de torta con la distribución porcentual de gastos por categoría del mes en curso |
 
 ### Conversor de divisas
 
 | ID | Requerimiento |
 | --- | --- |
-| RF-37 | El sistema debe incluir una sección dedicada para convertir entre USD y ARS en ambas direcciones |
-| RF-38 | El sistema debe permitir al usuario ingresar un monto en USD o ARS |
-| RF-39 | El sistema debe permitir al usuario seleccionar el tipo de cambio a aplicar entre: oficial, blue, bolsa, cripto, tarjeta, contadoconliqui, mayorista |
-| RF-40 | El sistema debe consultar la cotización actual a la API https://dolarapi.com/v1/dolares/{tipo} al momento de la conversión |
-| RF-41 | El sistema debe mostrar el resultado de la conversión en la moneda destino correspondiente a la dirección seleccionada |
-| RF-42 | El sistema debe mostrar un mensaje de error explícito si la API no está disponible, sin mostrar ningún valor de conversión |
-| RF-43 | El sistema debe permitir al usuario seleccionar la dirección de la conversión: USD → ARS o ARS → USD |
+| RF-41 | El sistema debe incluir una sección dedicada para convertir entre USD y ARS en ambas direcciones |
+| RF-42 | El sistema debe permitir al usuario ingresar un monto en USD o ARS |
+| RF-43 | El sistema debe permitir al usuario seleccionar el tipo de cambio a aplicar entre: oficial, blue, bolsa, cripto, tarjeta, contadoconliqui, mayorista |
+| RF-44 | El sistema debe consultar la cotización actual a la API https://dolarapi.com/v1/dolares/{tipo} al momento de la conversión |
+| RF-45 | El sistema debe mostrar el resultado de la conversión en la moneda destino correspondiente a la dirección seleccionada |
+| RF-46 | El sistema debe mostrar un mensaje de error explícito si la API no está disponible, sin mostrar ningún valor de conversión |
+| RF-47 | El sistema debe permitir al usuario seleccionar la dirección de la conversión: USD → ARS o ARS → USD |
 
 ---
 
@@ -161,19 +166,19 @@ Entonces el sistema bloquea la operación y muestra un mensaje indicando que deb
 
 ---
 
-**AC-05 · Fuentes de dinero iniciales predefinidas (cubre RF-08)**
+**AC-05 · Catálogo de fuentes de dinero vacío al crear la cuenta (cubre RF-08)**
 
 Dado que el usuario acaba de crear su cuenta y no dio de alta ninguna fuente de dinero propia
 Cuando accede al selector de fuentes de dinero del formulario de transacción
-Entonces el selector muestra al menos las fuentes predefinidas: Santander, BNA, Macro, Lemon, Brubank y Efectivo
+Entonces el selector no muestra ninguna fuente de dinero, hasta que el usuario dé de alta al menos una desde la gestión de fuentes de dinero
 
 ---
 
-**AC-06 · Alta de fuente de dinero (cubre RF-09)**
+**AC-06 · Alta de fuente de dinero con datos completos (cubre RF-09, RF-11–RF-13)**
 
 Dado que el usuario está autenticado y accede a la gestión de fuentes de dinero
-Cuando ingresa un nombre para una nueva fuente y confirma el alta
-Entonces la nueva fuente queda registrada y disponible para seleccionar al registrar una transacción
+Cuando ingresa un nombre, selecciona "Sí" o "No" en el campo "virtual", ingresa un monto inicial en ARS y un monto inicial en USD (cualquiera de los dos montos puede ser 0), y confirma el alta
+Entonces la nueva fuente queda registrada con el nombre ingresado, el campo "virtual" almacenado como true (si eligió "Sí") o false (si eligió "No"), y los montos iniciales en ARS y USD ingresados, y queda disponible para seleccionar al registrar una transacción
 
 ---
 
@@ -185,15 +190,47 @@ Entonces el sistema impide el alta y muestra un mensaje indicando que ya existe 
 
 ---
 
-**AC-08 · Categorías iniciales predefinidas (cubre RF-11)**
+**AC-08 · Validación de campo "virtual" obligatorio (cubre RF-11)**
 
-Dado que el usuario acaba de crear su cuenta y no dio de alta ninguna categoría propia
-Cuando accede al selector de categorías del formulario de transacción
-Entonces el selector muestra al menos las categorías predefinidas: comida, transporte, sueldo y freelance
+Dado que el usuario está completando el formulario de alta de una fuente de dinero
+Cuando intenta confirmar el alta sin seleccionar "Sí" o "No" en el campo "virtual"
+Entonces el sistema impide el alta y muestra un mensaje indicando que el campo "virtual" es obligatorio
 
 ---
 
-**AC-09 · Alta de categoría propia (cubre RF-12)**
+**AC-09 · Validación de monto inicial en ARS obligatorio (cubre RF-12)**
+
+Dado que el usuario está completando el formulario de alta de una fuente de dinero
+Cuando intenta confirmar el alta sin ingresar un monto inicial en ARS
+Entonces el sistema impide el alta y muestra un mensaje indicando que el monto inicial en ARS es obligatorio
+
+---
+
+**AC-10 · Validación de monto inicial en USD obligatorio (cubre RF-13)**
+
+Dado que el usuario está completando el formulario de alta de una fuente de dinero
+Cuando intenta confirmar el alta sin ingresar un monto inicial en USD
+Entonces el sistema impide el alta y muestra un mensaje indicando que el monto inicial en USD es obligatorio
+
+---
+
+**AC-11 · Recálculo del monto de una fuente de dinero tras una transacción (cubre RF-14)**
+
+Dado que la fuente "Lemon" tiene un monto de 1.000 ARS
+Cuando el usuario registra un egreso de 200 ARS asociado a "Lemon"
+Entonces el monto en ARS de "Lemon" pasa a ser 800, y el monto en USD de "Lemon" no se modifica
+
+---
+
+**AC-12 · Catálogo de categorías vacío al crear la cuenta (cubre RF-15)**
+
+Dado que el usuario acaba de crear su cuenta y no dio de alta ninguna categoría propia
+Cuando accede al selector de categorías del formulario de transacción
+Entonces el selector no muestra ninguna categoría, hasta que el usuario dé de alta al menos una desde la gestión de categorías
+
+---
+
+**AC-13 · Alta de categoría propia (cubre RF-16)**
 
 Dado que el usuario está autenticado y accede a la gestión de categorías
 Cuando ingresa un nombre para una nueva categoría y confirma el alta
@@ -201,7 +238,7 @@ Entonces la nueva categoría queda registrada y disponible para seleccionar al r
 
 ---
 
-**AC-10 · Validación de categoría duplicada (cubre RF-13)**
+**AC-14 · Validación de categoría duplicada (cubre RF-17)**
 
 Dado que ya existe una categoría registrada con el nombre "Comida"
 Cuando el usuario intenta dar de alta una nueva categoría con el nombre "Comida"
@@ -209,23 +246,23 @@ Entonces el sistema impide el alta y muestra un mensaje indicando que ya existe 
 
 ---
 
-**AC-11 · Registro de egreso (cubre RF-14)**
+**AC-15 · Registro de egreso (cubre RF-18)**
 
-Dado que el usuario está autenticado en el dashboard
-Cuando completa el formulario de egreso con monto, banco (ej.: Lemon), moneda (ARS), categoría, fecha y descripción, y confirma
-Entonces la transacción aparece en el listado y el saldo de Lemon en ARS se reduce exactamente en el monto ingresado
-
----
-
-**AC-12 · Registro de ingreso (cubre RF-15)**
-
-Dado que el usuario está autenticado en el dashboard
-Cuando completa el formulario de ingreso con monto, banco (ej.: Santander), moneda (ARS), categoría, fecha y descripción, y confirma
-Entonces la transacción aparece en el listado y el saldo de Santander en ARS se incrementa exactamente en el monto ingresado
+Dado que el usuario está autenticado en el dashboard y ya dio de alta la fuente "Lemon" con un monto en ARS
+Cuando completa el formulario de egreso con monto, fuente (Lemon), moneda (ARS), categoría, fecha y descripción, y confirma
+Entonces la transacción aparece en el listado y el monto de Lemon en ARS se reduce exactamente en el monto ingresado respecto de su valor previo
 
 ---
 
-**AC-13 · Validación de monto obligatorio (cubre RF-16)**
+**AC-16 · Registro de ingreso (cubre RF-19)**
+
+Dado que el usuario está autenticado en el dashboard y ya dio de alta la fuente "Santander" con un monto en ARS
+Cuando completa el formulario de ingreso con monto, fuente (Santander), moneda (ARS), categoría, fecha y descripción, y confirma
+Entonces la transacción aparece en el listado y el monto de Santander en ARS se incrementa exactamente en el monto ingresado respecto de su valor previo
+
+---
+
+**AC-17 · Validación de monto obligatorio (cubre RF-20)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin ingresar un monto
@@ -233,7 +270,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que el mon
 
 ---
 
-**AC-14 · Validación de fuente de dinero obligatoria (cubre RF-17)**
+**AC-18 · Validación de fuente de dinero obligatoria (cubre RF-21)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin seleccionar una fuente de dinero
@@ -241,7 +278,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que la fue
 
 ---
 
-**AC-15 · Validación de moneda obligatoria (cubre RF-18)**
+**AC-19 · Validación de moneda obligatoria (cubre RF-22)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin seleccionar una moneda
@@ -249,7 +286,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que la mon
 
 ---
 
-**AC-16 · Validación de categoría obligatoria (cubre RF-19)**
+**AC-20 · Validación de categoría obligatoria (cubre RF-23)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin seleccionar una categoría
@@ -257,7 +294,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que la cat
 
 ---
 
-**AC-17 · Validación de fecha obligatoria (cubre RF-20)**
+**AC-21 · Validación de fecha obligatoria (cubre RF-24)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin seleccionar una fecha
@@ -265,7 +302,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que la fec
 
 ---
 
-**AC-18 · Validación de descripción obligatoria (cubre RF-21)**
+**AC-22 · Validación de descripción obligatoria (cubre RF-25)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar la transacción sin completar la descripción
@@ -273,7 +310,7 @@ Entonces el sistema impide el guardado y muestra un mensaje indicando que la des
 
 ---
 
-**AC-19 · Registro de transacción con datos obligatorios completos (cubre RF-16–RF-21)**
+**AC-23 · Registro de transacción con datos obligatorios completos (cubre RF-20–RF-25)**
 
 Dado que el usuario está registrando una nueva transacción
 Cuando ingresa un monto válido, selecciona una fuente de dinero válida, una moneda válida, una categoría y una fecha, e ingresa una descripción, y confirma
@@ -281,23 +318,23 @@ Entonces el sistema guarda la transacción, y los valores de monto, fuente, mone
 
 ---
 
-**AC-20 · Edición de transacción (cubre RF-22)**
+**AC-24 · Edición de transacción (cubre RF-26)**
 
 Dado que el usuario selecciona "editar" en una transacción existente
 Cuando modifica el monto y confirma los cambios
-Entonces el listado refleja el nuevo monto y el saldo del banco correspondiente se recalcula en consecuencia
+Entonces el listado refleja el nuevo monto y el monto de la fuente de dinero correspondiente se recalcula en consecuencia
 
 ---
 
-**AC-21 · Eliminación de transacción (cubre RF-23)**
+**AC-25 · Eliminación de transacción (cubre RF-27)**
 
 Dado que el usuario selecciona "eliminar" en una transacción existente
 Cuando confirma la acción en el diálogo de confirmación
-Entonces la transacción desaparece del listado y el saldo del banco correspondiente se recalcula como si esa transacción nunca hubiera existido
+Entonces la transacción desaparece del listado y el monto de la fuente de dinero correspondiente se recalcula como si esa transacción nunca hubiera existido
 
 ---
 
-**AC-22 · Validación de monto inválido (cubre RF-24)**
+**AC-26 · Validación de monto inválido (cubre RF-28)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando ingresa un monto igual a cero o negativo e intenta guardar
@@ -305,7 +342,7 @@ Entonces el sistema no guarda la transacción y muestra un mensaje de error indi
 
 ---
 
-**AC-23 · Validación de formulario — campo obligatorio vacío (cubre RF-25)**
+**AC-27 · Validación de formulario — campo obligatorio vacío (cubre RF-29)**
 
 Dado que el usuario está completando el formulario de transacción
 Cuando intenta guardar sin completar alguno de los campos obligatorios (monto, fuente, moneda, categoría, fecha o descripción)
@@ -313,7 +350,7 @@ Entonces el sistema no guarda la transacción y muestra un mensaje de error indi
 
 ---
 
-**AC-24 · Error de persistencia (cubre RF-26)**
+**AC-28 · Error de persistencia (cubre RF-30)**
 
 Dado que el usuario completó correctamente el formulario de transacción
 Cuando el sistema falla al intentar guardar la transacción (ej.: error de red o base de datos)
@@ -321,15 +358,15 @@ Entonces el sistema muestra un mensaje de error y mantiene los datos del formula
 
 ---
 
-**AC-25 · Saldo por fuente de dinero (cubre RF-27)**
+**AC-29 · Saldo por fuente de dinero (cubre RF-31)**
 
-Dado que el usuario tiene ingresos y egresos registrados asociados a "Brubank" en ARS
+Dado que la fuente "Brubank" tiene un monto inicial en ARS y el usuario tiene ingresos y egresos registrados asociados a "Brubank" en ARS
 Cuando accede a la vista de saldos
-Entonces el saldo de Brubank en ARS es igual a la suma de todos sus ingresos en ARS en esa cuenta menos la suma de todos sus egresos en ARS en esa cuenta
+Entonces el saldo de Brubank en ARS (campo monto) es igual a su monto inicial en ARS más la suma de todos sus ingresos en ARS menos la suma de todos sus egresos en ARS en esa fuente
 
 ---
 
-**AC-26 · Saldo consolidado ARS y USD (cubre RF-28)**
+**AC-30 · Saldo consolidado ARS y USD (cubre RF-32)**
 
 Dado que el usuario tiene transacciones en ARS en Santander y en USD en Brubank
 Cuando accede a la vista de saldos
@@ -337,7 +374,7 @@ Entonces el sistema muestra el saldo total en ARS (solo sumando transacciones en
 
 ---
 
-**AC-27 · Filtro por día (cubre RF-29)**
+**AC-31 · Filtro por día (cubre RF-33)**
 
 Dado que el usuario está en el listado de transacciones con registros en distintas fechas
 Cuando selecciona el filtro por día y elige "2026-06-15"
@@ -345,7 +382,7 @@ Entonces el listado muestra únicamente las transacciones cuya fecha es exactame
 
 ---
 
-**AC-28 · Filtro por mes (cubre RF-30)**
+**AC-32 · Filtro por mes (cubre RF-34)**
 
 Dado que el usuario está en el listado de transacciones con registros en distintos meses
 Cuando selecciona el filtro por mes y elige "mayo 2026"
@@ -353,7 +390,7 @@ Entonces el listado muestra únicamente las transacciones cuya fecha corresponde
 
 ---
 
-**AC-29 · Filtro por año (cubre RF-31)**
+**AC-33 · Filtro por año (cubre RF-35)**
 
 Dado que el usuario está en el listado de transacciones con registros en distintos años
 Cuando selecciona el filtro por año y elige "2025"
@@ -361,7 +398,7 @@ Entonces el listado muestra únicamente las transacciones cuya fecha corresponde
 
 ---
 
-**AC-30 · Paginación del listado (cubre RF-32–RF-33)**
+**AC-34 · Paginación del listado (cubre RF-36–RF-37)**
 
 Dado que el usuario tiene más de 50 transacciones registradas y accede al listado de transacciones sin ningún filtro activo
 Cuando la página carga por primera vez y luego el usuario navega a la página 2 mediante los controles de paginación
@@ -369,7 +406,7 @@ Entonces la página 1 muestra únicamente las primeras 50 transacciones, la pág
 
 ---
 
-**AC-31 · Filtro de gráfico por rango de fechas (cubre RF-34)**
+**AC-35 · Filtro de gráfico por rango de fechas (cubre RF-38)**
 
 Dado que el usuario se encuentra en la sección de gráficos y existen transacciones registradas en distintos períodos
 Cuando selecciona un rango de fechas determinado
@@ -377,7 +414,7 @@ Entonces el gráfico muestra únicamente los gastos correspondientes a las trans
 
 ---
 
-**AC-32 · Filtro de gráfico por categoría de gasto (cubre RF-35)**
+**AC-36 · Filtro de gráfico por categoría de gasto (cubre RF-39)**
 
 Dado que el usuario se encuentra en la sección de gráficos y existen gastos registrados en múltiples categorías
 Cuando selecciona una categoría específica de gasto
@@ -385,7 +422,7 @@ Entonces el gráfico muestra únicamente la información correspondiente a la ca
 
 ---
 
-**AC-33 · Vista por defecto del gráfico (cubre RF-36)**
+**AC-37 · Vista por defecto del gráfico (cubre RF-40)**
 
 Dado que el usuario navega a la sección de gráficos sin filtros aplicados
 Cuando la sección termina de cargar
@@ -393,7 +430,7 @@ Entonces el sistema muestra un gráfico de torta con la distribución porcentual
 
 ---
 
-**AC-34 · Conversor USD → ARS con API disponible (cubre RF-40–RF-41, RF-43)**
+**AC-38 · Conversor USD → ARS con API disponible (cubre RF-44–RF-45, RF-47)**
 
 Dado que el usuario está en la sección de conversión y la API de dolarapi.com responde
 Cuando selecciona la dirección USD → ARS, ingresa 100 USD y selecciona el tipo de cambio "blue"
@@ -401,7 +438,7 @@ Entonces el sistema muestra el equivalente en ARS calculado con el valor retorna
 
 ---
 
-**AC-35 · Error de conversión por API no disponible (cubre RF-42)**
+**AC-39 · Error de conversión por API no disponible (cubre RF-46)**
 
 Dado que el usuario está en la sección de conversión y seleccionó cualquier dirección de conversión (USD → ARS o ARS → USD)
 Cuando el sistema intenta consultar la API de dolarapi.com y esta no responde, devuelve error o supera el tiempo máximo de espera configurado
@@ -409,7 +446,7 @@ Entonces el sistema muestra un mensaje de error explícito indicando que no fue 
 
 ---
 
-**AC-36 · Conversor ARS → USD con API disponible (cubre RF-43)**
+**AC-40 · Conversor ARS → USD con API disponible (cubre RF-47)**
 
 Dado que el usuario está en la sección de conversión y la API de dolarapi.com responde
 Cuando selecciona la dirección ARS → USD, ingresa 1.000 ARS y selecciona el tipo de cambio "oficial"
@@ -417,7 +454,7 @@ Entonces el sistema muestra el equivalente en USD calculado dividiendo 1.000 por
 
 ---
 
-**AC-37 · Selección de tipo de cambio (cubre RF-39)**
+**AC-41 · Selección de tipo de cambio (cubre RF-43)**
 
 Dado que el usuario se encuentra en la sección de conversión
 Cuando selecciona uno de los tipos de cambio disponibles (oficial, blue, bolsa, cripto, tarjeta, contadoconliqui o mayorista)
@@ -425,7 +462,7 @@ Entonces el sistema utiliza la cotización correspondiente al tipo seleccionado 
 
 ---
 
-**AC-38 · Visualización de la sección de conversión (cubre RF-37)**
+**AC-42 · Visualización de la sección de conversión (cubre RF-41)**
 
 Dado que el usuario accede a la sección de conversión y la API de dolarapi.com está disponible
 Cuando la página termina de cargar
@@ -433,7 +470,7 @@ Entonces el sistema muestra: un campo para ingresar el monto, un control para se
 
 ---
 
-**AC-39 · Cálculo de conversión con datos válidos (cubre RF-38, RF-41)**
+**AC-43 · Cálculo de conversión con datos válidos (cubre RF-42, RF-45)**
 
 Dado que el usuario se encuentra en la sección de conversión, seleccionó una dirección de conversión (USD → ARS o ARS → USD) y un tipo de cambio, y la API de dolarapi.com responde
 Cuando ingresa un monto válido mayor a cero en el campo de origen
@@ -441,7 +478,7 @@ Entonces el sistema muestra en el campo de resultado el monto convertido a la mo
 
 ---
 
-**AC-40 · Aislamiento de datos entre usuarios (cubre RNF-10)**
+**AC-44 · Aislamiento de datos entre usuarios (cubre RNF-10)**
 
 Dado que el usuario A está autenticado y tiene transacciones, saldos, fuentes de dinero, categorías y passkeys propias registradas, y existe un usuario B con transacciones, saldos, fuentes de dinero, categorías y passkeys propias y distintas
 Cuando el usuario A solicita el listado de transacciones, el detalle de saldos, el listado de fuentes de dinero, el listado de categorías, el listado de passkeys, o intenta acceder directamente a un recurso de usuario B mediante su ID (una transacción, una fuente de dinero, una categoría o una passkey)
@@ -458,7 +495,10 @@ Entonces el sistema únicamente devuelve datos pertenecientes a usuario A, y den
 - Exportación de datos a CSV o PDF
 - Aplicación móvil nativa (iOS / Android)
 - Gestión de inversiones, plazos fijos o criptoactivos
-- Modificación y eliminación de fuentes de dinero y categorías (solo se soporta el alta, con validación de nombre duplicado; una vez creadas no se pueden editar ni borrar, para no afectar las transacciones históricas ya registradas)
+- Fuentes de dinero y categorías predefinidas: no se ofrece ningún catálogo inicial: el usuario parte de cero y da de alta cada fuente y categoría manualmente
+- Edición o eliminación manual de fuentes de dinero y categorías (solo se soporta el alta, con validación de nombre duplicado; una vez creadas, el nombre y el campo "virtual" de una fuente no se pueden editar ni borrar, para no afectar las transacciones históricas ya registradas; el monto de una fuente solo cambia mediante el recálculo automático descripto en RF-14)
+- Edición manual del monto de una fuente de dinero fuera del recálculo automático por transacciones (no existe una operación de "ajustar saldo" independiente de registrar una transacción)
+- Bloqueo o flujo de onboarding forzado que impida llegar al dashboard mientras el usuario no tenga fuentes o categorías creadas: la falta de fuentes/categorías se maneja como cualquier otro caso de campo obligatorio vacío al intentar guardar una transacción (RF-29)
 - Recuperación de cuenta (el usuario puede registrar múltiples passkeys en distintos dispositivos como respaldo; el flujo de recuperación sin passkey se abordará en v2)
 
 ---
@@ -473,7 +513,8 @@ Entonces el sistema únicamente devuelve datos pertenecientes a usuario A, y den
 | R02 | Soporte de passkeys limitado en dispositivos/navegadores del usuario | Media | Alto | El usuario puede optar por registrarse y autenticarse con usuario y contraseña si su dispositivo no soporta WebAuthn |
 | R03 | Pérdida o robo del dispositivo con passkey bloquea el acceso | Baja | Medio | El usuario puede registrar passkeys en múltiples dispositivos; flujo de recuperación sin passkey se abordará en v2 |
 | R04 | Cambios en la estructura de respuesta de dolarapi.com | Baja | Medio | Versionar la integración y agregar validación del esquema de respuesta |
-| R05 | Al no soportar edición ni eliminación de fuentes de dinero ni categorías, un error de tipeo que no coincida exactamente con un nombre ya existente (p. ej. una letra de más o de menos) no es detectado por la validación de duplicados y queda permanente en el catálogo del usuario | Media | Bajo | La validación de duplicados exactos (RF-10, RF-13) evita nombres repetidos; no se previenen variantes con errores de tipeo en esta versión |
+| R05 | Al no soportar edición ni eliminación de fuentes de dinero ni categorías, un error de tipeo que no coincida exactamente con un nombre ya existente (p. ej. una letra de más o de menos) no es detectado por la validación de duplicados y queda permanente en el catálogo del usuario | Media | Bajo | La validación de duplicados exactos (RF-10, RF-17) evita nombres repetidos; no se previenen variantes con errores de tipeo en esta versión |
+| R06 | Al no existir un catálogo predefinido, un usuario recién registrado que intente registrar su primera transacción sin haber dado de alta antes ninguna fuente o categoría se encuentra con selectores vacíos | Alta | Bajo | El formulario de transacción informa el campo obligatorio faltante (RF-29) y la gestión de fuentes/categorías queda accesible en todo momento desde el dashboard |
 
 ### Dependencias
 
@@ -481,5 +522,5 @@ Entonces el sistema únicamente devuelve datos pertenecientes a usuario A, y den
 | --- | --- | --- | --- |
 | D01 | dolarapi.com | Externa | API pública para obtención de tipos de cambio USD/ARS. Endpoint: GET https://dolarapi.com/v1/dolares/{tipo} |
 | D02 | WebAuthn / FIDO2 | Estándar web | Protocolo de autenticación sin contraseña. Requiere soporte en navegador y dispositivo del usuario |
-| D03 | Base de datos | Infraestructura | Almacenamiento persistente de transacciones, categorías y credenciales passkey |
+| D03 | Base de datos | Infraestructura | Almacenamiento persistente de transacciones, fuentes de dinero, categorías y credenciales passkey |
 | D04 | Servidor backend | Infraestructura | Necesario para gestión de sesiones WebAuthn y operaciones seguras sobre la base de datos |

@@ -37,4 +37,14 @@
 - La especificación referencia la API externa dolarapi.com y su campo `venta` porque el PRD la
   fija como fuente de cotización obligatoria (no es una elección de implementación libre del
   equipo); se mantiene como requisito de negocio, no como detalle técnico.
+- **2026-07-24**: Spec actualizado a partir de PRD.md v2.2 (fuentes de dinero y categorías sin
+  catálogo predefinido; fuentes de dinero con campos "virtual", monto inicial ARS y monto
+  inicial USD, recalculados automáticamente por transacción). Se agregó la Historia 2 (Alta de
+  fuentes de dinero y categorías propias) y se renumeraron las historias 3 a 7 en consecuencia;
+  se agregaron FR-049 a FR-052 y se ajustaron FR-009, FR-012, FR-015 y FR-021. Revalidado contra
+  este checklist sin encontrar incompletitudes ni `[NEEDS CLARIFICATION]` nuevos.
+- **2026-07-24 (clarify)**: Sesión de `/speckit-clarify` resolvió 3 ambigüedades: alcance de la
+  edición de transacción (se puede cambiar fuente/moneda, con recálculo cruzado), signo del
+  monto inicial de una fuente (no negativo), y saldo negativo tras egresos (permitido, sin
+  bloqueo). Checklist revalidado: 16/16 items siguen en verde, sin regresiones.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`.

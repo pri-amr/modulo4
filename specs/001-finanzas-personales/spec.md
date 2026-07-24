@@ -33,7 +33,7 @@
 - Q: ¿Existe un límite máximo de longitud para el nombre de una fuente de dinero/categoría y para la descripción de una transacción? → A: 60 caracteres para nombre de fuente de dinero o categoría; sin límite máximo para la descripción de la transacción.
 - Q: ¿Qué nivel de accesibilidad (teclado, contraste, lectores de pantalla) se exige en esta versión? → A: Ninguno definido; queda fuera de alcance en esta versión.
 - Q: ¿Con qué regla se redondean los porcentajes del gráfico de gastos por categoría (FR-025) cuando no suman exactamente 100%? → A: Redondeo a 1 decimal por categoría, con ajuste en la categoría de mayor monto para que la suma total dé exactamente 100%.
-- Q: ¿Qué patrón de confirmación visual usa la pantalla de Transacciones tras guardar, editar o eliminar una transacción (Historia 2)? → A: Actualización en línea — el listado se refresca al instante y el formulario se limpia, sin navegar a otra pantalla.
+- Q: ¿Qué patrón de confirmación visual usa la pantalla de Transacciones tras guardar, editar o eliminar una transacción (Historia 3, renumerada desde Historia 2 al incorporarse la Historia de alta de fuentes/categorías)? → A: Actualización en línea — el listado se refresca al instante y el formulario se limpia, sin navegar a otra pantalla.
 - Q: Si dolarapi.com responde exitosamente pero sin el tipo de cambio solicitado (FR-030), ¿cómo debe tratarse? → A: Igual que cualquier otro fallo de la fuente: error explícito, sin valor de conversión (mismo tratamiento que FR-032).
 - Q: ¿Cuál es el orden por defecto del listado de transacciones (FR-023, FR-024)? → A: Más reciente primero, por fecha de transacción descendente y `createdAt` descendente como desempate.
 - Q: ¿En qué zona horaria se calculan los límites del "mes en curso" del gráfico de gastos (FR-025)? → A: Zona horaria de Argentina (America/Argentina/Buenos_Aires, UTC-3 fijo, sin horario de verano).
@@ -54,13 +54,19 @@
 
 - Q: ¿Existe un tope máximo de monto para una transacción, o el sistema acepta cualquier valor positivo sin límite superior? → A: Sin límite superior; se acepta cualquier valor positivo mayor a cero.
 - Q: ¿Con qué patrón visual se señala un campo faltante o inválido en el formulario de
-  transacción (Historia 2, escenario 3)? → A: Inline junto al campo: el borde del campo inválido
+  transacción (Historia 3, escenario 3)? → A: Inline junto al campo: el borde del campo inválido
   se pone rojo y su mensaje de error aparece debajo, también en rojo; ambos vuelven al estado
   normal en cuanto el usuario modifica el valor de ese campo.
 - Q: ¿En qué formato numérico ingresa el usuario el monto de una transacción (coma decimal
   argentina o punto decimal estándar)? → A: Formato argentino: el campo acepta coma como
   separador decimal (por ejemplo 1234,56); el valor se convierte a número estándar antes de
   guardarse.
+
+### Session 2026-07-24
+
+- Q: ¿Se puede editar la fuente de dinero y/o la moneda de una transacción existente, o esos dos campos quedan fijos una vez creada? → A: Se puede editar cualquier campo, incluida fuente de dinero y moneda; el recálculo revierte el efecto en la fuente/moneda original y lo aplica en la nueva.
+- Q: ¿El monto inicial de una fuente de dinero (ARS o USD) puede ser negativo, o debe ser siempre mayor o igual a cero? → A: Debe ser mayor o igual a cero; no se acepta un monto inicial negativo.
+- Q: ¿Se permite que el monto de una fuente de dinero quede negativo tras una transacción, o el sistema debe bloquear el guardado de una transacción que lo dejaría en negativo? → A: Se permite saldo negativo; el sistema no valida fondos disponibles, solo registra el movimiento y refleja el monto resultante.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -106,60 +112,116 @@ entregando valor por sí sola (acceso seguro) sin depender de ninguna otra histo
 
 ---
 
-### User Story 2 - Registro de ingresos y egresos (Priority: P1)
+### User Story 2 - Alta de fuentes de dinero y categorías propias (Priority: P1)
 
-Un usuario autenticado registra sus movimientos de dinero (ingresos y egresos), indicando
-monto, fuente de dinero, moneda, categoría, fecha y descripción, y puede corregir o eliminar
-movimientos ya cargados.
+Un usuario autenticado cuya cuenta arranca sin ninguna fuente de dinero ni categoría (no existe
+catálogo predefinido) da de alta sus propias fuentes de dinero, indicando un nombre, si es una
+billetera virtual o un banco físico, y un monto inicial en ARS y en USD; y da de alta sus
+propias categorías, indicando un nombre. Ambos catálogos quedan disponibles de inmediato para
+usarse al registrar transacciones.
+
+**Why this priority**: Sin al menos una fuente de dinero y una categoría propias no es posible
+registrar ninguna transacción (Historia 3); es un prerrequisito directo del valor central del
+producto.
+
+**Independent Test**: Se puede probar de forma completa desde una cuenta recién creada (sin
+fuentes de dinero ni categorías), dando de alta una fuente con todos sus campos y una categoría,
+y verificando que ambas quedan disponibles para selección — entrega valor por sí sola (catálogo
+personalizado) sin depender de que existan transacciones cargadas.
+
+**Acceptance Scenarios**:
+
+1. **Given** un usuario recién registrado sin fuentes de dinero propias, **When** accede al
+   selector de fuentes de dinero del formulario de transacción, **Then** el selector no muestra
+   ninguna fuente hasta que dé de alta al menos una desde la gestión de fuentes de dinero.
+2. **Given** un usuario autenticado en la gestión de fuentes de dinero, **When** ingresa un
+   nombre, selecciona "Sí" o "No" en el campo "virtual" (billetera virtual o banco físico),
+   ingresa un monto inicial en ARS y un monto inicial en USD (cualquiera de los dos puede ser
+   0), y confirma el alta, **Then** la fuente queda registrada con el nombre, el valor de
+   "virtual" y los montos iniciales ingresados, y disponible para seleccionar al registrar una
+   transacción.
+3. **Given** un usuario completando el alta de una fuente de dinero, **When** intenta confirmar
+   sin seleccionar "Sí" o "No" en el campo "virtual", sin ingresar el monto inicial en ARS, o
+   sin ingresar el monto inicial en USD, **Then** el sistema impide el alta y señala cuál campo
+   obligatorio falta.
+4. **Given** un usuario completando el alta de una fuente de dinero, **When** ingresa un valor
+   negativo en el monto inicial en ARS o en el monto inicial en USD, **Then** el sistema impide
+   el alta y explica que el monto inicial no puede ser negativo.
+5. **Given** ya existe una fuente de dinero registrada con el nombre "Lemon", **When** el
+   usuario intenta dar de alta una nueva fuente de dinero con el nombre "Lemon", **Then** el
+   sistema impide el alta y explica que ya existe una fuente de dinero con ese nombre.
+6. **Given** un usuario recién registrado sin categorías propias, **When** accede al selector de
+   categorías del formulario de transacción, **Then** el selector no muestra ninguna categoría
+   hasta que dé de alta al menos una desde la gestión de categorías.
+7. **Given** un usuario autenticado en la gestión de categorías, **When** ingresa un nombre para
+   una nueva categoría y confirma el alta, **Then** la categoría queda registrada y disponible
+   para seleccionar al registrar una transacción.
+8. **Given** ya existe una categoría registrada con el nombre "Comida", **When** el usuario
+   intenta dar de alta una nueva categoría con el nombre "Comida", **Then** el sistema impide el
+   alta y explica que ya existe una categoría con ese nombre.
+
+---
+
+### User Story 3 - Registro de ingresos y egresos (Priority: P1)
+
+Un usuario autenticado que ya dio de alta al menos una fuente de dinero y una categoría propias
+(Historia 2) registra sus movimientos de dinero (ingresos y egresos), indicando monto, fuente de
+dinero, moneda, categoría, fecha y descripción, y puede corregir o eliminar movimientos ya
+cargados.
 
 **Why this priority**: Es el corazón del producto: sin poder cargar movimientos, la aplicación
 no cumple su propósito central de centralizar el control de ingresos y egresos.
 
 **Independent Test**: Se puede probar de forma completa creando, editando y eliminando
-transacciones desde una cuenta ya autenticada (usando las fuentes y categorías predefinidas que
-el sistema ofrece de fábrica), y verificando que el listado y el detalle reflejan exactamente
-los datos ingresados — entrega valor de forma independiente de gráficos, filtros o conversor.
+transacciones desde una cuenta ya autenticada que ya dio de alta al menos una fuente de dinero y
+una categoría propias (Historia 2), y verificando que el listado y el detalle reflejan
+exactamente los datos ingresados — entrega valor de forma independiente de gráficos, filtros o
+conversor.
 
 **Acceptance Scenarios**:
 
-1. **Given** un usuario autenticado en el dashboard, **When** completa el formulario de egreso
-   con monto, fuente de dinero, moneda, categoría, fecha y descripción válidos y confirma,
-   **Then** la transacción aparece en el listado con esos datos exactos, el listado se
-   actualiza en línea sin navegar a otra pantalla, y el formulario se limpia para una carga
-   siguiente.
-2. **Given** un usuario autenticado en el dashboard, **When** completa el formulario de ingreso
-   con datos válidos y confirma, **Then** la transacción aparece en el listado con esos datos
-   exactos, con la misma actualización en línea sin navegación.
+1. **Given** un usuario autenticado en el dashboard que ya dio de alta al menos una fuente de
+   dinero y una categoría propias, **When** completa el formulario de egreso con monto, fuente
+   de dinero, moneda, categoría, fecha y descripción válidos y confirma, **Then** la transacción
+   aparece en el listado con esos datos exactos, el monto de la fuente de dinero en esa moneda
+   se reduce exactamente en el monto ingresado, el listado se actualiza en línea sin navegar a
+   otra pantalla, y el formulario se limpia para una carga siguiente.
+2. **Given** un usuario autenticado en el dashboard que ya dio de alta al menos una fuente de
+   dinero y una categoría propias, **When** completa el formulario de ingreso con datos válidos
+   y confirma, **Then** la transacción aparece en el listado con esos datos exactos, el monto de
+   la fuente de dinero en esa moneda se incrementa exactamente en el monto ingresado, con la
+   misma actualización en línea sin navegación.
 3. **Given** un usuario completando el formulario de transacción, **When** intenta guardar sin
-   completar el monto, la fuente de dinero, la moneda, la categoría, la fecha o la descripción,
-   **Then** el sistema impide el guardado y señala cuál campo falta marcando su borde en rojo y
-   mostrando el mensaje de error en rojo debajo de ese campo, volviendo ambos al estado normal en
-   cuanto el usuario modifica su valor.
+   completar el monto, la fuente de dinero, la moneda, la categoría, la fecha o la descripción
+   (incluyendo el caso de no tener aún ninguna fuente de dinero o categoría propia para
+   seleccionar), **Then** el sistema impide el guardado y señala cuál campo falta marcando su
+   borde en rojo y mostrando el mensaje de error en rojo debajo de ese campo, volviendo ambos al
+   estado normal en cuanto el usuario modifica su valor.
 4. **Given** un usuario completando el formulario de transacción, **When** ingresa un monto
    igual a cero o negativo, **Then** el sistema impide el guardado y explica que el monto debe
    ser mayor a cero.
-5. **Given** una transacción existente, **When** el usuario la edita y confirma los cambios,
-   **Then** el listado refleja los nuevos valores de forma inmediata y en línea, sin navegar a
-   otra pantalla.
+5. **Given** una transacción existente, **When** el usuario la edita — incluyendo, si lo desea,
+   cambiar su fuente de dinero o su moneda — y confirma los cambios, **Then** el listado refleja
+   los nuevos valores de forma inmediata y en línea, sin navegar a otra pantalla, el monto de la
+   fuente y moneda originales se recalcula revirtiendo el efecto de los valores anteriores, y el
+   monto de la fuente y moneda nuevas (si cambiaron) se recalcula aplicando los valores nuevos.
 6. **Given** una transacción existente, **When** el usuario la elimina y confirma la acción en
    el diálogo de confirmación, **Then** la transacción desaparece del listado de forma
-   inmediata y en línea.
+   inmediata y en línea, y el monto de la fuente de dinero correspondiente se recalcula como si
+   esa transacción nunca hubiera existido.
 7. **Given** un usuario que completó correctamente el formulario, **When** el guardado falla
    (por ejemplo, un error de red), **Then** el sistema muestra un mensaje de error y conserva
    los datos ingresados para que pueda reintentar sin volver a escribirlos.
-8. **Given** un usuario dando de alta una fuente de dinero o categoría propia, **When** ingresa
-   un nombre que ya existe, **Then** el sistema impide el alta y explica que ya existe una con
-   ese nombre.
 
 ---
 
-### User Story 3 - Visibilidad de saldos por fuente y consolidados (Priority: P2)
+### User Story 4 - Visibilidad de saldos por fuente y consolidados (Priority: P2)
 
 Un usuario autenticado consulta cuánto dinero tiene disponible en cada banco o efectivo, y
 cuánto tiene en total en ARS y en USD.
 
 **Why this priority**: Convierte el registro de movimientos en información útil para tomar
-decisiones; depende de que existan transacciones cargadas (Historia 2) pero no de filtros,
+decisiones; depende de que existan transacciones cargadas (Historia 3) pero no de filtros,
 gráficos ni del conversor.
 
 **Independent Test**: Con transacciones ya cargadas en distintas fuentes y monedas, se puede
@@ -168,10 +230,10 @@ coinciden con la suma esperada de ingresos menos egresos.
 
 **Acceptance Scenarios**:
 
-1. **Given** un usuario con ingresos y egresos registrados en una fuente de dinero en una
-   moneda determinada, **When** accede a la vista de saldos, **Then** el saldo mostrado para
-   esa fuente y moneda es igual a la suma de sus ingresos menos la suma de sus egresos en esa
-   fuente y moneda.
+1. **Given** una fuente de dinero con un monto inicial en una moneda determinada y un usuario
+   con ingresos y egresos registrados en esa fuente en esa moneda, **When** accede a la vista de
+   saldos, **Then** el saldo mostrado para esa fuente y moneda es igual a su monto inicial en
+   esa moneda más la suma de sus ingresos menos la suma de sus egresos en esa fuente y moneda.
 2. **Given** un usuario con transacciones en ARS y en USD distribuidas en varias fuentes,
    **When** accede a la vista de saldos, **Then** el sistema muestra el total consolidado en
    ARS y el total consolidado en USD por separado, cada uno sumando solo las transacciones de
@@ -179,13 +241,13 @@ coinciden con la suma esperada de ingresos menos egresos.
 
 ---
 
-### User Story 4 - Filtrado y navegación del historial de transacciones (Priority: P2)
+### User Story 5 - Filtrado y navegación del historial de transacciones (Priority: P2)
 
 Un usuario autenticado con muchos movimientos cargados filtra el listado por día, mes o año, y
 navega entre páginas cuando hay más de 50 resultados.
 
 **Why this priority**: Se vuelve necesario a medida que crece el historial de transacciones
-(Historia 2); mejora la usabilidad pero no es indispensable para el valor mínimo de registrar y
+(Historia 3); mejora la usabilidad pero no es indispensable para el valor mínimo de registrar y
 ver movimientos.
 
 **Independent Test**: Con un conjunto de transacciones que abarca varios días, meses, años y
@@ -207,13 +269,13 @@ correctamente y que la paginación no repite ni omite registros.
 
 ---
 
-### User Story 5 - Análisis visual de gastos (Priority: P3)
+### User Story 6 - Análisis visual de gastos (Priority: P3)
 
 Un usuario autenticado visualiza gráficos de sus gastos, filtrables por rango de fechas y por
 categoría, para entender en qué y cuándo gasta más.
 
 **Why this priority**: Aporta valor analítico adicional sobre datos que ya existen gracias a la
-Historia 2; no bloquea el uso diario de registrar y consultar movimientos.
+Historia 3; no bloquea el uso diario de registrar y consultar movimientos.
 
 **Independent Test**: Con gastos cargados en varias categorías y fechas, se puede verificar de
 forma aislada que el gráfico por defecto y los filtros de fecha/categoría muestran exactamente
@@ -231,7 +293,7 @@ los subconjuntos de datos esperados.
 
 ---
 
-### User Story 6 - Conversión entre USD y ARS (Priority: P3)
+### User Story 7 - Conversión entre USD y ARS (Priority: P3)
 
 Un usuario autenticado convierte un monto entre USD y ARS en cualquier dirección, eligiendo
 entre los distintos tipos de cambio vigentes en Argentina (oficial, blue, bolsa, cripto,
@@ -274,7 +336,18 @@ conversión.
 - ¿Qué pasa si el usuario da de alta una fuente de dinero o categoría con un nombre casi
   idéntico a uno existente pero con una diferencia mínima (mayúsculas, espacio o typo)? Se
   acepta como entrada válida y distinta: solo se bloquean los nombres exactamente duplicados.
-  Una vez creada, ni las fuentes de dinero ni las categorías pueden editarse ni eliminarse.
+  Una vez creada, ni el nombre ni (en el caso de una fuente de dinero) el campo "virtual" pueden
+  editarse ni eliminarse; el monto de una fuente de dinero tampoco es editable manualmente y
+  solo cambia mediante el recálculo automático al registrar, editar o eliminar transacciones.
+- ¿Qué pasa si un egreso deja el monto de una fuente de dinero (en la moneda de ese egreso) por
+  debajo de cero? El sistema no valida fondos disponibles: registra la transacción igual y el
+  monto de la fuente en esa moneda queda negativo, reflejando ese resultado.
+- ¿Qué pasa si un usuario intenta registrar una transacción sin haber dado de alta todavía
+  ninguna fuente de dinero, ninguna categoría, o ninguna de las dos (catálogo vacío por
+  tratarse de una cuenta recién creada)? El selector correspondiente aparece vacío y el sistema
+  lo trata como cualquier otro campo obligatorio faltante: impide el guardado y lo señala,
+  guiando al usuario a darse de alta al menos una fuente y una categoría antes de poder
+  registrar la transacción.
 - ¿Qué pasa si el usuario pierde acceso a todos sus dispositivos con passkey y no tiene
   contraseña configurada (porque eligió passkey como único método)? No hay flujo de
   recuperación de cuenta en esta versión; el usuario debe mitigar este riesgo registrando
@@ -339,20 +412,43 @@ conversión.
 
 **Fuentes de dinero y categorías**
 
-- **FR-009**: El sistema MUST ofrecer, al crear la cuenta, una lista predefinida de fuentes de
-  dinero: Santander, BNA, Macro, Lemon, Brubank y Efectivo.
+- **FR-009**: El sistema MUST iniciar el catálogo de fuentes de dinero de una cuenta recién
+  creada completamente vacío, sin ninguna fuente predefinida; el usuario MUST dar de alta al
+  menos una fuente propia antes de poder seleccionarla al registrar una transacción.
 - **FR-010**: El sistema MUST permitir al usuario dar de alta una fuente de dinero propia con un
   nombre elegido por él, de hasta 60 caracteres.
 - **FR-011**: El sistema MUST impedir el alta de una fuente de dinero cuyo nombre coincida
   exactamente con uno ya existente en esa cuenta.
-- **FR-012**: El sistema MUST ofrecer, al crear la cuenta, una lista predefinida de categorías:
-  comida, transporte, sueldo y freelance.
+- **FR-012**: El sistema MUST iniciar el catálogo de categorías de una cuenta recién creada
+  completamente vacío, sin ninguna categoría predefinida; el usuario MUST dar de alta al menos
+  una categoría propia antes de poder seleccionarla al registrar una transacción.
 - **FR-013**: El sistema MUST permitir al usuario dar de alta una categoría propia con un nombre
   elegido por él, de hasta 60 caracteres.
 - **FR-014**: El sistema MUST impedir el alta de una categoría cuyo nombre coincida exactamente
   con una ya existente en esa cuenta.
-- **FR-015**: El sistema MUST NOT permitir editar ni eliminar una fuente de dinero o categoría
-  una vez creada (solo se soporta el alta).
+- **FR-015**: El sistema MUST NOT permitir editar ni eliminar el nombre de una fuente de dinero
+  o categoría una vez creado, ni (en el caso de una fuente de dinero) su campo "virtual" (solo
+  se soporta el alta). El monto de una fuente de dinero MUST NOT ser editable manualmente; solo
+  puede cambiar mediante el recálculo automático descripto en FR-052.
+- **FR-049**: El sistema MUST requerir, al dar de alta una fuente de dinero, un campo booleano
+  "virtual" (true si es una billetera virtual, false si es un banco físico), presentado en el
+  formulario como un desplegable con las opciones "Sí" (virtual) y "No" (físico); MUST impedir
+  el alta si no se selecciona una opción, indicando que el campo es obligatorio.
+- **FR-050**: El sistema MUST requerir, al dar de alta una fuente de dinero, un monto inicial en
+  ARS (numérico, mayor o igual a 0); MUST impedir el alta si no se ingresa, indicando que el
+  campo es obligatorio, y MUST impedir el alta si el valor ingresado es negativo, indicando que
+  el monto inicial no puede ser negativo.
+- **FR-051**: El sistema MUST requerir, al dar de alta una fuente de dinero, un monto inicial en
+  USD (numérico, mayor o igual a 0); MUST impedir el alta si no se ingresa, indicando que el
+  campo es obligatorio, y MUST impedir el alta si el valor ingresado es negativo, indicando que
+  el monto inicial no puede ser negativo.
+- **FR-052**: El sistema MUST recalcular el monto en ARS y el monto en USD de una fuente de
+  dinero cada vez que se registra, edita o elimina una transacción asociada a esa fuente,
+  sumando los ingresos y restando los egresos de la moneda correspondiente sobre el monto
+  vigente de esa fuente en esa moneda. Cuando la edición de una transacción cambia su fuente de
+  dinero o su moneda, el sistema MUST revertir el efecto de los valores anteriores sobre la
+  fuente y moneda originales y MUST aplicar el efecto de los valores nuevos sobre la fuente y
+  moneda nuevas.
 
 **Transacciones**
 
@@ -370,8 +466,9 @@ conversión.
   guardado por ese motivo.
 - **FR-044**: El sistema MUST rechazar como inválida cualquier fecha de transacción posterior a
   la fecha actual; solo se permite fecha de hoy o anterior.
-- **FR-018**: El sistema MUST permitir editar una transacción existente y reflejar los nuevos
-  valores en el listado y en los saldos afectados.
+- **FR-018**: El sistema MUST permitir editar cualquier campo de una transacción existente,
+  incluidos su fuente de dinero y su moneda, y MUST reflejar los nuevos valores en el listado y
+  en los saldos afectados.
 - **FR-019**: El sistema MUST permitir eliminar una transacción existente, exigiendo
   confirmación explícita del usuario antes de borrarla.
 - **FR-020**: El sistema MUST mostrar un mensaje de error y MUST conservar los datos ya
@@ -384,8 +481,9 @@ conversión.
 **Saldos**
 
 - **FR-021**: El sistema MUST mostrar el saldo disponible por separado para cada fuente de
-  dinero y moneda, calculado como la suma de ingresos menos la suma de egresos de esa fuente y
-  moneda.
+  dinero y moneda, calculado como el monto inicial de esa fuente en esa moneda (FR-050, FR-051)
+  más la suma de ingresos menos la suma de egresos de esa fuente y moneda (equivalente al monto
+  vigente recalculado según FR-052).
 - **FR-022**: El sistema MUST mostrar el saldo total consolidado en ARS (sumando solo
   transacciones en ARS de todas las fuentes) y el saldo total consolidado en USD (sumando solo
   transacciones en USD de todas las fuentes), de forma independiente entre sí.
@@ -454,12 +552,15 @@ conversión.
 - **Credencial de acceso**: representa el método de autenticación de un usuario; puede ser una o
   más passkeys (cada una con un nombre definido por el usuario al registrarla) o un par
   usuario/contraseña de al menos 4 caracteres (nunca ambos para la misma cuenta).
-- **Fuente de dinero**: banco o medio (por ejemplo Santander, BNA, Macro, Lemon, Brubank,
-  Efectivo) donde el usuario mantiene dinero; predefinida o dada de alta por el usuario; nombre
-  único por cuenta; no editable ni eliminable una vez creada.
+- **Fuente de dinero**: banco o medio donde el usuario mantiene dinero, dado de alta enteramente
+  por el propio usuario (no existe catálogo predefinido); tiene nombre único por cuenta (no
+  editable ni eliminable), un campo booleano "virtual" (true = billetera virtual, false = banco
+  físico, tampoco editable ni eliminable una vez creado), y un monto en ARS y un monto en USD
+  que arrancan en el valor inicial ingresado al darla de alta (puede ser 0) y se recalculan
+  automáticamente — nunca se editan manualmente — con cada transacción asociada a esa fuente.
 - **Categoría**: clasificación de un movimiento (por ejemplo comida, transporte, sueldo,
-  freelance); predefinida o dada de alta por el usuario; nombre único por cuenta; no editable ni
-  eliminable una vez creada.
+  freelance), dada de alta enteramente por el usuario (no existe catálogo predefinido); nombre
+  único por cuenta; no editable ni eliminable una vez creada.
 - **Transacción**: movimiento de dinero (ingreso o egreso) con monto, moneda (ARS o USD), fuente
   de dinero asociada, categoría asociada, fecha y descripción; pertenece a un único usuario.
 - **Saldo**: valor derivado (no una entidad almacenada de forma independiente) calculado a
@@ -489,8 +590,8 @@ conversión.
 - **SC-006**: La interfaz es completamente usable, sin scroll horizontal, en anchos de pantalla
   desde 320 px.
 - **SC-007**: El saldo mostrado por cada fuente de dinero y el saldo consolidado por moneda
-  coinciden, en el 100% de los casos verificados, con la suma de ingresos menos egresos
-  correspondiente.
+  coinciden, en el 100% de los casos verificados, con su monto inicial más la suma de ingresos
+  menos egresos correspondiente.
 - **SC-008**: Ningún usuario puede ver ni modificar transacciones, saldos, fuentes de dinero,
   categorías o passkeys de otra cuenta, verificado en el 100% de los intentos de acceso cruzado
   probados.
@@ -512,9 +613,15 @@ conversión.
   pantalla, contraste WCAG) en esta versión; queda como brecha conocida para una versión futura.
 - No se gestionan inversiones, plazos fijos ni criptoactivos como activos propios de la cuenta
   (distinto del uso de "cripto" como uno de los tipos de cambio disponibles en el conversor).
-- Las fuentes de dinero y categorías, una vez creadas, no pueden editarse ni eliminarse, para no
-  afectar el histórico de transacciones ya registradas; solo se valida que no se dupliquen
-  nombres exactos.
+- No existe catálogo predefinido de fuentes de dinero ni de categorías: toda cuenta nueva
+  arranca sin ninguna, y el usuario debe dar de alta al menos una de cada una antes de poder
+  registrar su primera transacción.
+- Las fuentes de dinero y categorías, una vez creadas, no pueden editarse ni eliminarse (nombre,
+  y en el caso de una fuente de dinero también su campo "virtual"), para no afectar el
+  histórico de transacciones ya registradas; solo se valida que no se dupliquen nombres exactos.
+  El monto de una fuente de dinero es la única excepción a la inmutabilidad: cambia
+  automáticamente al registrar, editar o eliminar una transacción asociada, pero no existe una
+  operación de "ajustar saldo" manual independiente de una transacción.
 - No existe flujo de recuperación de cuenta sin passkey en esta versión; la mitigación
   disponible es que el usuario registre passkeys en varios dispositivos.
 - No existe flujo de recuperación de contraseña olvidada en esta versión, de forma simétrica a
