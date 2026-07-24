@@ -129,9 +129,9 @@ según `plan.md` → Project Structure.
 
 ### Frontend
 
-- [ ] T029 [P] Test unitario de `handleRequest` (casos de éxito y error, `axios` mockeado) en
+- [X] T029 [P] Test unitario de `handleRequest` (casos de éxito y error, `axios` mockeado) en
   `frontend/__tests__/__mocks__/handleRequest.test.ts` — escribir primero, debe fallar
-- [ ] T030 [P] Implementar `handleRequest(method, endpoint, body?, headers?)` en
+- [X] T030 [P] Implementar `handleRequest(method, endpoint, body?, headers?)` en
   `frontend/src/services/handleRequest.ts` (hace pasar T029)
 - [ ] T031 [P] Implementar `LoadingProvider` (estado global de carga, se activa/desactiva
   alrededor de cada llamada de `handleRequest`) en `frontend/src/providers/LoadingProvider.tsx`
