@@ -19,7 +19,7 @@ Cada ítem pregunta si el spec está completo, claro, consistente y medible — 
 
 - [ ] CHK001 - ¿Está definido qué ocurre si el usuario intenta dar de alta una fuente de dinero o categoría con el nombre vacío, distinto del caso de duplicado ya cubierto? [Gap, Spec §FR-010, §FR-013]
 - [ ] CHK002 - ¿Está especificado un límite máximo de longitud para el nombre de una fuente de dinero, una categoría o la descripción de una transacción? [Gap, Spec §FR-010, §FR-013, §FR-017]
-- [ ] CHK003 - ¿Está definido si existe un tope máximo de monto para una transacción, o el sistema acepta cualquier valor positivo sin límite superior? [Gap, Spec §FR-017]
+- [x] CHK003 - ¿Está definido si existe un tope máximo de monto para una transacción, o el sistema acepta cualquier valor positivo sin límite superior? [Gap, Spec §FR-017]
 - [ ] CHK004 - ¿Está especificado si se permite registrar una transacción con fecha futura? [Gap, Spec §FR-017]
 - [x] CHK005 - ¿Está definido el criterio de ordenamiento por defecto del listado de transacciones? [Gap, Spec §FR-023, §FR-024]
 - [ ] CHK006 - ¿Están definidos requisitos de cifrado en tránsito, además del cifrado en reposo de FR-034, para los datos financieros? [Gap, Spec §FR-034]

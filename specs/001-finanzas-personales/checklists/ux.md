@@ -26,7 +26,7 @@ Cada ítem pregunta si el spec está completo, claro, consistente y medible — 
 
 ## Requirement Clarity
 
-- [ ] CHK009 - ¿Especifica el spec, más allá de "señala cuál falta" (Historia 2, escenario 3), si el error se muestra en línea junto al campo o como mensaje general? [Ambiguity, Spec §User Story 2]
+- [x] CHK009 - ¿Especifica el spec, más allá de "señala cuál falta" (Historia 2, escenario 3), si el error se muestra en línea junto al campo o como mensaje general? [Ambiguity, Spec §User Story 2]
 - [ ] CHK010 - ¿Aclara SC-006 si "sin scroll horizontal" aplica a todas las secciones (listado, gráficos, conversor) o solo al layout principal? [Ambiguity, Spec §SC-006]
 - [ ] CHK011 - ¿Está definido un patrón de presentación común (banner, toast, inline) para "mensaje de error", usado de forma consistente entre FR-004, FR-020 y FR-032, o cada sección podría implementarlo distinto? [Consistency, Spec §FR-004, §FR-020, §FR-032]
 

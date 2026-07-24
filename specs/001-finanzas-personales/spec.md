@@ -50,6 +50,18 @@
 
 - Q: FR-043 dejaba abierto si un monto con más de 2 decimales se redondea o se rechaza. ¿Cuál de las dos? → A: Se redondea a 2 decimales (redondeo estándar, mitad hacia arriba); no se rechaza el guardado por ese motivo.
 
+### Session 2026-07-23
+
+- Q: ¿Existe un tope máximo de monto para una transacción, o el sistema acepta cualquier valor positivo sin límite superior? → A: Sin límite superior; se acepta cualquier valor positivo mayor a cero.
+- Q: ¿Con qué patrón visual se señala un campo faltante o inválido en el formulario de
+  transacción (Historia 2, escenario 3)? → A: Inline junto al campo: el borde del campo inválido
+  se pone rojo y su mensaje de error aparece debajo, también en rojo; ambos vuelven al estado
+  normal en cuanto el usuario modifica el valor de ese campo.
+- Q: ¿En qué formato numérico ingresa el usuario el monto de una transacción (coma decimal
+  argentina o punto decimal estándar)? → A: Formato argentino: el campo acepta coma como
+  separador decimal (por ejemplo 1234,56); el valor se convierte a número estándar antes de
+  guardarse.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1)
@@ -120,7 +132,9 @@ los datos ingresados — entrega valor de forma independiente de gráficos, filt
    exactos, con la misma actualización en línea sin navegación.
 3. **Given** un usuario completando el formulario de transacción, **When** intenta guardar sin
    completar el monto, la fuente de dinero, la moneda, la categoría, la fecha o la descripción,
-   **Then** el sistema impide el guardado y señala cuál campo falta.
+   **Then** el sistema impide el guardado y señala cuál campo falta marcando su borde en rojo y
+   mostrando el mensaje de error en rojo debajo de ese campo, volviendo ambos al estado normal en
+   cuanto el usuario modifica su valor.
 4. **Given** un usuario completando el formulario de transacción, **When** ingresa un monto
    igual a cero o negativo, **Then** el sistema impide el guardado y explica que el monto debe
    ser mayor a cero.
@@ -345,9 +359,11 @@ conversión.
 - **FR-016**: El sistema MUST permitir registrar una transacción de tipo egreso y una de tipo
   ingreso.
 - **FR-017**: El sistema MUST requerir, para guardar una transacción, un monto numérico mayor a
-  cero, una fuente de dinero existente, una moneda (ARS o USD), una categoría existente, una
-  fecha y una descripción de texto libre sin límite máximo de longitud; MUST impedir el
-  guardado si falta alguno de estos datos y MUST indicar cuál falta.
+  cero y sin límite superior, una fuente de dinero existente, una moneda (ARS o USD), una
+  categoría existente, una fecha y una descripción de texto libre sin límite máximo de longitud;
+  MUST impedir el guardado si falta alguno de estos datos y MUST indicar cuál falta. El campo de
+  monto MUST aceptar el ingreso con coma como separador decimal (formato argentino, por ejemplo
+  "1234,56"), convirtiéndolo a número estándar antes de guardarlo.
 - **FR-043**: El sistema MUST aceptar montos de transacción con hasta 2 decimales (precisión de
   centavos); si el usuario ingresa un valor con mayor precisión, el sistema MUST redondearlo a 2
   decimales (redondeo estándar, mitad hacia arriba) antes de guardarlo, sin rechazar el
