@@ -13,7 +13,7 @@ export default async function TransaccionesPage() {
       <section aria-label="Alta de transacción">
         {/* TODO(US2): poblar moneySources/categories desde GET /money-sources y
             GET /categories una vez que esa historia exista. */}
-        <TransactionForm moneySources={[]} categories={[]} />
+        <TransactionForm moneySources={[{ id: "1", name: "BNA" }]} categories={[{ id: "1", name: "Compras" }]} />
       </section>
       <section aria-label="Saldos por fuente" />
       <section aria-label="Historial de transacciones" />
