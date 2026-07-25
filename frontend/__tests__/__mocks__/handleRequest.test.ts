@@ -36,7 +36,7 @@ describe("handleRequest", () => {
       isAxiosError: true,
       response: { data: { error: { code: "VALIDATION_ERROR", message: "Invalid", field: "amount" } } },
     });
-    mockedAxios.isAxiosError = jest.fn().mockReturnValue(true) as unknown as typeof axios.isAxiosError;
+    (axios.isAxiosError as unknown as jest.Mock).mockReturnValue(true);
 
     await expect(handleRequest("POST", "/transactions", {})).rejects.toEqual({
       code: "VALIDATION_ERROR",
