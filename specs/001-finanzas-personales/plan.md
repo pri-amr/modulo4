@@ -72,8 +72,9 @@ funcionales (FR-001 a FR-055) sin detalles de implementación adicionales fuera 
 por AGENTS.md/constitución.
 
 **Scale/Scope**: una cuenta = un usuario, sin cuentas compartidas (Assumptions); historial de
-transacciones paginado de a 50 (FR-024); 6 historias de usuario (P1 a P3); disponibilidad
-objetivo 99% mensual (SC-005), sin requisito de escala multi-instancia.
+transacciones paginado de a 50 (FR-024); 7 historias de usuario (P1 a P3, con US1 dividida en
+Phase 3a/Phase 10 de tasks.md por el orden de entrega); disponibilidad objetivo 99% mensual
+(SC-005), sin requisito de escala multi-instancia.
 
 ## Estándares de Interfaz (Frontend)
 
@@ -134,6 +135,8 @@ puntual):
   (azul/celeste) — no una variante más clara del mismo tono, sino el segundo color de acento de
   la paleta (ver "Paleta de color" arriba); los botones con color semántico (éxito/error) sí
   usan una variante más clara del mismo tono en `:hover`, sin cambio de estilo adicional.
+  `accent-blue` también se usa como hover genérico en botones/íconos secundarios que no parten
+  de `accent` (ej. `ThemeToggle`, con fondo `surface-muted`), no solo como hover de `accent`.
 
 ### Layout de pantallas
 
