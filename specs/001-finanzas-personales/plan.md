@@ -17,6 +17,10 @@ módulo por contexto: auth, transacciones, saldos, etc.) y CQRS interno (comando
 módulo, sin framework ni broker adicional); MongoDB como única base de datos; WebAuthn
 (`@simplewebauthn`) para passkeys y Argon2id para contraseñas.
 
+**Orden de entrega**: la primera fase implementa la aplicación completa usando exclusivamente
+usuario/contraseña como método de autenticación; el soporte de passkeys (registro, login,
+gestión) se agrega en una fase final, una vez cerrada esa base (spec.md, Assumptions).
+
 ## Technical Context
 
 **Language/Version**: TypeScript sobre Node.js v24 LTS (frontend y backend, AGENTS.md)
@@ -24,8 +28,9 @@ módulo, sin framework ni broker adicional); MongoDB como única base de datos; 
 **Primary Dependencies**:
 - Frontend: Next.js (App Router) + React + Tailwind, `axios` (encapsulado en
   `services/handleRequest.ts`), `next-auth` (sesión), `@simplewebauthn/browser`, `recharts`
-  (research.md §7), `@heroicons/react` (íconos, ver "Estándares de Interfaz" abajo). Sin
-  librería de componentes UI: los componentes se construyen a medida sobre clases Tailwind.
+  (research.md §7), `@heroicons/react` (íconos, ver "Estándares de Interfaz" abajo), `zustand`
+  (store del tema claro/oscuro con middleware `persist`, FR-054). Sin librería de componentes
+  UI: los componentes se construyen a medida sobre clases Tailwind.
 - Backend: Express, `@simplewebauthn/server` (research.md §1), `argon2` (research.md §2),
   `jsonwebtoken` (sesión propia, research.md §3), `mongoose` (acceso a MongoDB, research.md
   §15), `axios` (dolarapi.com, research.md §8), `zod` (validación de esquema de todo input
@@ -62,8 +67,8 @@ de la capa de persistencia (FR-048); sin catálogo predefinido de fuentes de din
 booleano y montos iniciales en ARS/USD ≥0 al darse de alta (FR-049–FR-051), recalculados
 automáticamente en cada transacción, incluido el cruce de fuente/moneda al editar (FR-018,
 FR-052, research.md §16); TLS terminado en la capa de despliegue, fuera del alcance funcional
-del código (Assumptions); UI sin scroll horizontal desde 320px (SC-006); 52 requisitos
-funcionales (FR-001 a FR-052) sin detalles de implementación adicionales fuera de los ya fijados
+del código (Assumptions); UI sin scroll horizontal desde 320px (SC-006); 55 requisitos
+funcionales (FR-001 a FR-055) sin detalles de implementación adicionales fuera de los ya fijados
 por AGENTS.md/constitución.
 
 **Scale/Scope**: una cuenta = un usuario, sin cuentas compartidas (Assumptions); historial de
@@ -87,9 +92,16 @@ puntual):
   estándar de Tailwind (`green-*`, `red-*`, `amber-*`) solo en su contexto puntual (mensajes de
   error de FR-004/FR-020/FR-032, badges de éxito) — no como color protagonista permanente de
   ingresos/egresos en toda la UI.
-- **Modo oscuro**: habilitado por defecto (clase `dark` de Tailwind aplicada al montar la app;
-  paleta neutra + acento con sus variantes `dark:` correspondientes). No se especificó si existe
-  un toggle a modo claro — se documenta como pendiente si se llega a pedir.
+- **Modo claro/oscuro**: ambos modos disponibles (FR-054), con modo oscuro por defecto al montar
+  la app (clase `dark` de Tailwind aplicada por defecto; paleta neutra + acento con sus variantes
+  `dark:` correspondientes). El control de alternancia es un **ícono fijo visible en toda
+  pantalla** (incluidas Login y Registro, antes de autenticarse) — no depende del menú
+  hamburguesa del Dashboard, que solo existe una vez logueado. La preferencia se guarda en un
+  store de `zustand` con middleware `persist` (backing en `localStorage`); si en la práctica
+  aparece un parpadeo del tema por defecto antes de que React hidrate y aplique la preferencia
+  guardada (FOUC en el render SSR de Next.js), se migra a leer la preferencia desde una cookie
+  en el servidor para aplicar la clase `dark`/sin clase correcta antes del primer paint, con el
+  store de `zustand` hidratándose desde esa cookie al montar.
 - **Íconos**: `@heroicons/react` (set `outline` por defecto, `solid` para estados activos/
   seleccionados), para mantener consistencia visual con Tailwind Labs y evitar mezclar sets.
 - **Tipografía**: fuente por defecto del sistema vía Tailwind (`font-sans`), sin fuente custom
@@ -112,7 +124,9 @@ puntual):
   40% del ancho de la pantalla. Dividida en dos mitades por una línea vertical: la izquierda
   muestra un logo/isotipo de la app (temática financiera); la derecha contiene el formulario en
   columna con los inputs requeridos y, según la pantalla, los botones "Ingreso" + "Ingreso con
-  passkey" (login) o "Registrar" + "Registro con passkey" (registro).
+  passkey" (login) o "Registrar" + "Registro con passkey" (registro). Por el orden de entrega
+  fijado arriba, la primera fase solo incluye "Ingreso" / "Registrar"; los botones "... con
+  passkey" se agregan recién en la fase final de passkeys.
 - **Alta de categoría**: formulario centrado vertical y horizontalmente en la pantalla, un único
   campo de nombre (FR-013).
 - **Alta de fuente de dinero**: mismo layout centrado, campos distribuidos en dos columnas:
@@ -139,10 +153,11 @@ puntual):
 
 - **Loader**: overlay circular centrado, a pantalla completa, con fondo semitransparente que
   bloquea clicks sobre el contenido subyacente (`pointer-events: none` en el contenido de atrás
-  mientras el overlay está activo). Se activa automáticamente al iniciar cualquier llamada que
-  pase por `services/handleRequest.ts` y se desactiva al resolverse (éxito o error) — se
-  implementa como estado global expuesto por un `LoadingProvider` en `providers/`, sin que cada
-  pantalla tenga que gestionarlo manualmente.
+  mientras el overlay está activo). El círculo se llena progresivamente con el color `#376BCB`
+  mientras gira, en animación de carga circular continua (FR-055). Se activa automáticamente al
+  iniciar cualquier llamada que pase por `services/handleRequest.ts` y se desactiva al resolverse
+  (éxito o error) — se implementa como estado global expuesto por un `LoadingProvider` en
+  `providers/`, sin que cada pantalla tenga que gestionarlo manualmente.
 
 ## Constitution Check
 

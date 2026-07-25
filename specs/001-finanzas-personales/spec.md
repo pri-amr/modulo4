@@ -70,6 +70,12 @@
 - Q: El gráfico de gastos por categoría (FR-025), ¿cómo debe tratar un mes con egresos tanto en ARS como en USD? → A: Un gráfico por moneda: el cálculo porcentual se hace por separado para ARS y para USD, nunca combinando montos de distinta moneda en la misma torta.
 - Q: Si el registro interno de un evento de seguridad (FR-038) falla al escribirse, ¿qué debe pasar con la operación de autenticación que lo disparó? → A: La autenticación sigue igual (fail-open); solo se pierde ese registro puntual de auditoría.
 
+### Session 2026-07-25
+
+- Q: ¿La aplicación debe ofrecer modo claro y modo oscuro, o solo uno de los dos? → A: Ambos modos disponibles, con modo oscuro por defecto al cargar; el usuario puede alternar a modo claro.
+- Q: ¿En qué orden se implementan los dos métodos de autenticación (passkey vs usuario/contraseña)? → A: Primero se construye la aplicación completa usando exclusivamente usuario/contraseña; passkey se agrega como método alternativo recién cuando esa base está terminada. El comportamiento final (un único método por cuenta, a elección del usuario) no cambia por esta secuencia de entrega.
+- Q: ¿Qué estilo visual debe tener el indicador de carga global (FR-045)? → A: Un círculo que se llena progresivamente con el color #376BCB mientras gira, en animación de carga circular continua, hasta que la operación en curso finaliza.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1)
@@ -579,6 +585,15 @@ conversión.
   persistencia, para prevenir que un valor con forma inesperada (por ejemplo, un objeto en un
   campo que espera texto) altere una consulta a la base de datos.
 
+**Interfaz**
+
+- **FR-054**: El sistema MUST ofrecer modo claro y modo oscuro para toda la interfaz, MUST
+  aplicar modo oscuro por defecto al cargar la aplicación, y MUST permitir al usuario alternar
+  entre ambos modos.
+- **FR-055**: El sistema MUST representar todo indicador de carga global (FR-045) como un círculo
+  que se llena progresivamente con el color #376BCB mientras gira, mostrando una animación de
+  carga circular continua hasta que la operación en curso finaliza (éxito o error).
+
 ### Key Entities
 
 - **Usuario**: persona dueña de una cuenta; tiene un único método de autenticación elegido en
@@ -670,3 +685,9 @@ conversión.
   despliegue (terminación TLS en el reverse proxy/balanceador y su certificado), no un requisito
   funcional del código de la aplicación; queda fuera del alcance funcional de este spec, de
   forma análoga a como no se definen detalles de hosting.
+- El soporte de passkey (FR-001, FR-005 a FR-007) se entrega en una fase posterior a completar
+  el flujo de usuario/contraseña: la primera etapa de desarrollo implementa la aplicación
+  completa usando exclusivamente usuario/contraseña, y passkey se incorpora como método
+  alternativo de registro/autenticación una vez cerrada esa base. Esta secuencia es una decisión
+  de orden de entrega, no un cambio al comportamiento final esperado (un único método por cuenta,
+  a elección del usuario entre los dos).

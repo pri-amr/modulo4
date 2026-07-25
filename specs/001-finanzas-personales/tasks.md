@@ -17,7 +17,10 @@ tener varios tests de contrato antes de construirse capa por capa, un componente
 tiene su test antes de implementarse, nunca después.
 
 **Organization**: Tareas agrupadas por historia de usuario (US1-US7, prioridad de spec.md) para
-permitir implementación y prueba independientes de cada una.
+permitir implementación y prueba independientes de cada una. **US1 se divide en dos fases no
+consecutivas**: Phase 3a (usuario/contraseña, MVP) y Phase 3b (passkeys, ubicada después de US7)
+— ver la nota de alcance al inicio de Phase 3a y la nota de posición al inicio de Phase 3b, por
+la decisión de orden de entrega de plan.md/spec.md (`/speckit-analyze` 2026-07-25, INC1).
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -162,95 +165,88 @@ según `plan.md` → Project Structure.
 
 ---
 
-## Phase 3: User Story 1 - Registro y acceso seguro a la cuenta (Priority: P1) 🎯 MVP
+## Phase 3a: User Story 1 - Registro y acceso con usuario/contraseña (Priority: P1) 🎯 MVP
 
-**Goal**: registro/login exclusivo por passkey o contraseña, gestión de passkeys, bloqueo tras
-intentos fallidos, sesión de 1 día, logout inmediato.
+**Nota de alcance (orden de entrega, `/speckit-analyze` 2026-07-25 → INC1)**: por la decisión de
+entrega fijada en plan.md (Summary) y spec.md (Assumptions), esta fase implementa la Historia de
+Usuario 1 **solo** con usuario/contraseña. El soporte de passkeys (registro, login, gestión) es
+la **misma** historia, pero se construye en **Phase 3b**, deliberadamente ubicada al final de
+este archivo (después de Phase 9/US7, antes de Polish) — no es una historia nueva, es una
+continuación pospuesta.
 
-**Independent Test**: registrar una cuenta con cada método, cerrar sesión, y verificar que solo
-el método elegido permite volver a entrar.
+**Goal**: registro/login exclusivo por usuario/contraseña, bloqueo tras intentos fallidos, sesión
+de 1 día, logout inmediato.
 
-### Tests for User Story 1 ⚠️ (escribir primero, deben fallar)
+**Independent Test**: registrar una cuenta con usuario/contraseña, cerrar sesión, y verificar que
+solo ese método permite volver a entrar.
 
-- [ ] T038 [P] [US1] Contract test `POST /auth/register` (password y alta de passkey) en
-  `backend/tests/contract/auth-register.test.ts`
-- [ ] T039 [P] [US1] Contract test `POST /auth/login` (éxito, password incorrecto, método
-  distinto al elegido, cuenta bloqueada) en `backend/tests/contract/auth-login.test.ts`
+### Tests for User Story 1a ⚠️ (escribir primero, deben fallar)
+
+- [ ] T038 [P] [US1] Contract test `POST /auth/register` (usuario/contraseña) en
+  `backend/tests/contract/auth-register.test.ts` — la variante de alta con passkey se agrega en
+  T138 (Phase 3b)
+- [ ] T039 [P] [US1] Contract test `POST /auth/login` (éxito, password incorrecto, cuenta
+  bloqueada) en `backend/tests/contract/auth-login.test.ts` — el caso "método distinto al
+  elegido" (FR-002) recién es verificable cuando exista un segundo método real; se agrega en
+  T041 (Phase 3b)
 - [ ] T040 [P] [US1] Contract test `POST /auth/logout` en `backend/tests/contract/auth-logout.test.ts`
-- [ ] T041 [P] [US1] Contract test de la ceremonia WebAuthn (registration-options/verify,
-  authentication-options/verify) en `backend/tests/contract/auth-webauthn.test.ts`
-- [ ] T042 [P] [US1] Contract test `GET/POST/DELETE /auth/passkeys` (incluye 409 al borrar la
-  última) en `backend/tests/contract/auth-passkeys.test.ts`
 - [ ] T043 [P] [US1] Integration test: 5 logins fallidos por contraseña → 423 bloqueado → el
   contador se resetea con éxito o al expirar los 15 min en
   `backend/tests/integration/auth-lockout.test.ts` (FR-036)
 - [ ] T044 [P] [US1] Integration test: la sesión expira al día en
   `backend/tests/integration/auth-session-expiry.test.ts` (FR-037)
-- [ ] T045 [P] [US1] Test de frontend: Login/Registro — validación, mensajes de error/reintento
-  (FR-004), y delegación correcta al backend vía el provider de next-auth (`handleRequest`
-  mockeado) en `frontend/__tests__/auth/login-register.test.tsx`
+- [ ] T045 [P] [US1] Test de frontend: Login/Registro con usuario/contraseña — validación,
+  mensajes de error/reintento (FR-004), y delegación correcta al backend vía el provider de
+  next-auth (`handleRequest` mockeado) en `frontend/__tests__/auth/login-register.test.tsx` — los
+  botones "... con passkey" se prueban en Phase 3b (T141/T142)
 - [ ] T046 [P] [US1] Test de frontend: Dashboard shell — renderiza las 4 tarjetas correctas y el
-  menú hamburguesa con "Cerrar Sesión"/"Agregar-Borrar passkey" (`handleRequest` mockeado) en
-  `frontend/__tests__/auth/dashboard-shell.test.tsx`
-- [ ] T047 [P] [US1] Test de frontend: `PasskeyManager` bloquea borrar la última passkey
-  (`handleRequest` mockeado) en `frontend/__tests__/auth/passkey-manager.test.tsx`
+  menú hamburguesa con "Cerrar Sesión" (`handleRequest` mockeado) en
+  `frontend/__tests__/auth/dashboard-shell.test.tsx` — el ítem "Agregar-Borrar passkey" se agrega
+  en T143 (Phase 3b)
 
-### Implementation for User Story 1
+### Implementation for User Story 1a
 
 - [ ] T048 [P] [US1] Implementar la entidad de dominio `User` (inmutabilidad de `authMethod`,
   password ≥4 caracteres, FR-042) en `backend/src/modules/auth/domain/user.ts`
-- [ ] T049 [P] [US1] Implementar la entidad de dominio `PasskeyCredential` en
-  `backend/src/modules/auth/domain/passkeyCredential.ts`
 - [ ] T050 [US1] Implementar `UserRepository` (Mongo) en
   `backend/src/modules/auth/infrastructure/userRepository.ts` (depende de T009, T048)
-- [ ] T051 [US1] Implementar `PasskeyCredentialRepository` (Mongo) en
-  `backend/src/modules/auth/infrastructure/passkeyRepository.ts` (depende de T009, T049)
 - [ ] T052 [US1] Implementar el comando `RegisterUser` (FR-001, FR-042; hashea la contraseña con
   Argon2id vía `argon2`, algoritmo/parámetros OWASP-equivalentes exigidos por FR-033,
   research.md §2) en `backend/src/modules/auth/application/commands/registerUser.ts` (depende
-  de T050; hace pasar T038)
-- [ ] T053 [US1] Implementar el comando `LoginWithPassword` (bloqueo FR-036, rechazo de método
-  distinto FR-002) en `backend/src/modules/auth/application/commands/loginWithPassword.ts`
-  (depende de T050, T023; hace pasar T039, T043)
-- [ ] T054 [US1] Implementar la ceremonia de alta de passkey (`@simplewebauthn/server`,
-  FR-005/FR-006) en `backend/src/modules/auth/application/commands/registerPasskey.ts` (depende
-  de T051; hace pasar parte de T041)
-- [ ] T055 [US1] Implementar la ceremonia de login por passkey (FR-002) en
-  `backend/src/modules/auth/application/commands/loginWithPasskey.ts` (depende de T051; hace
-  pasar el resto de T041)
-- [ ] T056 [US1] Implementar el comando `DeletePasskey` (bloquea la última, FR-007) en
-  `backend/src/modules/auth/application/commands/deletePasskey.ts` (depende de T051; hace pasar
-  T042)
+  de T050; hace pasar T038) — la variante de alta con passkey se agrega en T054 (Phase 3b)
+- [ ] T053 [US1] Implementar el comando `LoginWithPassword` (bloqueo FR-036) en
+  `backend/src/modules/auth/application/commands/loginWithPassword.ts` (depende de T050, T023;
+  hace pasar T039, T043) — el rechazo de método distinto (FR-002) se activa en Phase 3b, cuando
+  exista un segundo método real
 - [ ] T057 [US1] Implementar el comando `Logout` (invalida la sesión de inmediato, FR-041) en
   `backend/src/modules/auth/application/commands/logout.ts` (depende de T017; hace pasar T040)
-- [ ] T058 [P] [US1] Implementar la query `ListPasskeys` en
-  `backend/src/modules/auth/application/queries/listPasskeys.ts` (depende de T051)
 - [ ] T059 [US1] Implementar `backend/src/modules/auth/interface/authRoutes.ts` cableando
-  T052-T058 según contracts/api.md §Auth (depende de T020, T025, T052-T058; usa T013
-  `validateSchema` en cada endpoint de escritura FR-048, T019 `setSessionCookie`/
-  `clearSessionCookie` para emitir/invalidar la cookie de sesión en login, webauthn-verify y
-  logout FR-046, y T025 `requireOwnership` específicamente en `DELETE /auth/passkeys/:id` para
-  garantizar 404 ante una passkey de otra cuenta, FR-008/SC-008)
+  T052/T053/T057 (`POST /auth/register`, `POST /auth/login`, `POST /auth/logout`) según
+  contracts/api.md §Auth (depende de T020, T025, T052, T053, T057; usa T013 `validateSchema` en
+  cada endpoint de escritura FR-048, T019 `setSessionCookie`/`clearSessionCookie` para emitir/
+  invalidar la cookie de sesión en login y logout FR-046) — las rutas de WebAuthn y de gestión de
+  passkeys se agregan en T140 (Phase 3b), extendiendo este mismo archivo
 - [ ] T060 [US1] Montar las rutas de auth en `backend/src/app.ts` (depende de T027, T059)
 - [ ] T061 [P] [US1] Implementar el provider de next-auth que delega en el backend vía
-  `handleRequest` en `frontend/src/app/api/auth/[...nextauth]/route.ts` (depende de T030, T037;
-  hace pasar parte de T045)
+  `handleRequest` (flujo de credenciales usuario/contraseña) en
+  `frontend/src/app/api/auth/[...nextauth]/route.ts` (depende de T030, T037; hace pasar parte de
+  T045) — la extensión para passkey se agrega en Phase 3b
 - [ ] T062 [P] [US1] Construir la pantalla de Login (tarjeta centrada 40% de ancho, logo a la
-  izquierda, línea divisoria, formulario en columna a la derecha, botones "Ingreso"/"Ingreso con
-  passkey"; redirige al dashboard tras autenticación exitosa, FR-003) en
-  `frontend/src/app/login/page.tsx` y `frontend/src/components/auth/LoginForm.tsx` (hace pasar
-  el resto de T045)
-- [ ] T063 [P] [US1] Construir la pantalla de Registro (mismo layout, botones
-  "Registrar"/"Registro con passkey"; redirige al dashboard tras registro exitoso, FR-003) en
-  `frontend/src/app/registro/page.tsx` y `frontend/src/components/auth/RegisterForm.tsx`
+  izquierda, línea divisoria, formulario en columna a la derecha, botón "Ingreso"; redirige al
+  dashboard tras autenticación exitosa, FR-003) en `frontend/src/app/login/page.tsx` y
+  `frontend/src/components/auth/LoginForm.tsx` (hace pasar el resto de T045) — el botón "Ingreso
+  con passkey" se agrega en T141 (Phase 3b)
+- [ ] T063 [P] [US1] Construir la pantalla de Registro (mismo layout, botón "Registrar"; redirige
+  al dashboard tras registro exitoso, FR-003) en `frontend/src/app/registro/page.tsx` y
+  `frontend/src/components/auth/RegisterForm.tsx` — el botón "Registro con passkey" se agrega en
+  T142 (Phase 3b)
 - [ ] T064 [P] [US1] Construir el shell del Dashboard (4 tarjetas horizontales responsive
-  <500px, menú hamburguesa con "Cerrar Sesión"/"Agregar-Borrar passkey") en
-  `frontend/src/app/dashboard/page.tsx` y `frontend/src/components/auth/DashboardMenu.tsx`
-  (hace pasar T046)
-- [ ] T065 [P] [US1] Construir la gestión de passkeys (listado con nombre, alta, baja con
-  bloqueo de la última) en `frontend/src/components/auth/PasskeyManager.tsx` (hace pasar T047)
+  <500px, menú hamburguesa con "Cerrar Sesión") en `frontend/src/app/dashboard/page.tsx` y
+  `frontend/src/components/auth/DashboardMenu.tsx` (hace pasar T046) — el ítem "Agregar-Borrar
+  passkey" del menú se agrega en T143 (Phase 3b)
 
-**Checkpoint**: US1 funcional y probable de forma independiente (MVP).
+**Checkpoint**: US1a funcional y probable de forma independiente (MVP: acceso exclusivo por
+usuario/contraseña).
 
 ---
 
@@ -582,6 +578,82 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 ---
 
+## Phase 3b: User Story 1 (continuación) - Passkeys como método alternativo (Priority: P1)
+
+**Nota de posición**: esta fase pertenece a la misma Historia de Usuario 1 (Phase 3a, más
+arriba), pero se ubica acá — después de las 7 historias de usuario — porque plan.md (Summary) y
+spec.md (Assumptions) fijan que las passkeys se agregan recién "una vez cerrada" la base
+completa de la app con usuario/contraseña. Ninguna tarea de esta fase depende técnicamente de
+US2-US7; el orden es una decisión de entrega, no una dependencia de datos o de código.
+
+**Goal**: agregar passkeys (WebAuthn/FIDO2) como método de autenticación alternativo — registro
+de una cuenta directamente con passkey, login por passkey, gestión (alta/baja) de passkeys desde
+una cuenta ya existente, y rechazo de login con un método distinto al elegido (FR-002) ahora que
+existen dos métodos reales.
+
+**Independent Test**: registrar una cuenta nueva eligiendo passkey, cerrar sesión, volver a
+entrar solo con passkey; desde una cuenta con contraseña, agregar una passkey adicional y
+verificar que el botón "... con passkey" aparece en Login/Registro y que el ítem "Agregar-Borrar
+passkey" aparece en el menú del Dashboard.
+
+### Tests for User Story 1 (passkeys) ⚠️ (escribir primero, deben fallar)
+
+- [ ] T041 [P] [US1] Contract test de la ceremonia WebAuthn (registration-options/verify,
+  authentication-options/verify), incluyendo el rechazo de login por passkey en una cuenta con
+  método contraseña (FR-002) en `backend/tests/contract/auth-webauthn.test.ts`
+- [ ] T042 [P] [US1] Contract test `GET/POST/DELETE /auth/passkeys` (incluye 409 al borrar la
+  última) en `backend/tests/contract/auth-passkeys.test.ts`
+- [ ] T047 [P] [US1] Test de frontend: `PasskeyManager` bloquea borrar la última passkey
+  (`handleRequest` mockeado) en `frontend/__tests__/auth/passkey-manager.test.tsx`
+- [ ] T138 [P] [US1] Extender el contract test `POST /auth/register` (T038, Phase 3a) con la
+  variante de alta eligiendo passkey como método en `backend/tests/contract/auth-register.test.ts`
+- [ ] T139 [P] [US1] Extender el test de frontend Login/Registro (T045, Phase 3a) con los botones
+  y el flujo "Ingreso con passkey"/"Registro con passkey" en
+  `frontend/__tests__/auth/login-register.test.tsx`
+
+### Implementation for User Story 1 (passkeys)
+
+- [ ] T049 [P] [US1] Implementar la entidad de dominio `PasskeyCredential` en
+  `backend/src/modules/auth/domain/passkeyCredential.ts`
+- [ ] T051 [US1] Implementar `PasskeyCredentialRepository` (Mongo) en
+  `backend/src/modules/auth/infrastructure/passkeyRepository.ts` (depende de T009, T049)
+- [ ] T054 [US1] Implementar la ceremonia de alta de passkey (`@simplewebauthn/server`,
+  FR-005/FR-006), incluida la variante de alta de cuenta eligiendo passkey como método (FR-001)
+  en `backend/src/modules/auth/application/commands/registerPasskey.ts` (depende de T051; hace
+  pasar parte de T041 y T138)
+- [ ] T055 [US1] Implementar la ceremonia de login por passkey, incluido el rechazo si la cuenta
+  eligió contraseña como método (FR-002) en
+  `backend/src/modules/auth/application/commands/loginWithPasskey.ts` (depende de T051; hace
+  pasar el resto de T041)
+- [ ] T056 [US1] Implementar el comando `DeletePasskey` (bloquea la última, FR-007) en
+  `backend/src/modules/auth/application/commands/deletePasskey.ts` (depende de T051; hace pasar
+  T042)
+- [ ] T058 [P] [US1] Implementar la query `ListPasskeys` en
+  `backend/src/modules/auth/application/queries/listPasskeys.ts` (depende de T051)
+- [ ] T140 [US1] Extender `backend/src/modules/auth/interface/authRoutes.ts` (T059, Phase 3a) con
+  las rutas de WebAuthn y de gestión de passkeys (T054-T056, T058) según contracts/api.md §Auth
+  (depende de T059, T054, T055, T056, T058; usa T013 `validateSchema` FR-048, T019
+  `setSessionCookie`/`clearSessionCookie` en webauthn-verify FR-046, y T025 `requireOwnership` en
+  `DELETE /auth/passkeys/:id` para garantizar 404 ante una passkey de otra cuenta, FR-008/SC-008)
+  — no requiere una tarea nueva de montaje: T060 (Phase 3a) ya monta este mismo router
+- [ ] T141 [P] [US1] Agregar el botón "Ingreso con passkey" a la pantalla de Login (T062, Phase
+  3a) en `frontend/src/components/auth/LoginForm.tsx` (depende de T062, T140; hace pasar la parte
+  de T139 sobre login)
+- [ ] T142 [P] [US1] Agregar el botón "Registro con passkey" a la pantalla de Registro (T063,
+  Phase 3a) en `frontend/src/components/auth/RegisterForm.tsx` (depende de T063, T140; hace
+  pasar la parte de T139 sobre registro)
+- [ ] T143 [P] [US1] Agregar el ítem "Agregar-Borrar passkey" al menú hamburguesa del Dashboard
+  (T064, Phase 3a) y cablear la navegación a `PasskeyManager` en
+  `frontend/src/components/auth/DashboardMenu.tsx` (depende de T064; hace pasar T046 extendido)
+- [ ] T065 [P] [US1] Construir la gestión de passkeys (listado con nombre, alta, baja con
+  bloqueo de la última) en `frontend/src/components/auth/PasskeyManager.tsx` (depende de T140,
+  T143; hace pasar T047)
+
+**Checkpoint**: US1 completa (usuario/contraseña + passkeys) funcional y probable de forma
+independiente.
+
+---
+
 ## Phase 10: Polish & Cross-Cutting Concerns
 
 **Purpose**: mejoras que afectan a varias historias
@@ -633,16 +705,22 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 - **Setup (Phase 1)**: sin dependencias — puede arrancar de inmediato
 - **Foundational (Phase 2)**: depende de Setup — BLOQUEA todas las historias de usuario
-- **User Stories (Phase 3-9)**: todas dependen de Foundational; entre sí, siguen el orden de
+- **User Stories (Phase 3a-9)**: todas dependen de Foundational; entre sí, siguen el orden de
   prioridad P1 → P2 → P3, pero cada una es independientemente implementable y testeable salvo
   las dos dependencias cruzadas reales documentadas abajo (US3 → US2, US5 → US3)
+- **Phase 3b (passkeys, continuación de US1)**: depende técnicamente solo de Foundational y de
+  Phase 3a (reutiliza `User`, `authRoutes.ts`, `LoginForm`/`RegisterForm`/`DashboardMenu`); se
+  ubica después de Phase 9 por una decisión de orden de entrega (plan.md, spec.md Assumptions),
+  no por una dependencia real — técnicamente podría moverse antes si esa decisión cambiara
 - **Polish (Phase 10)**: depende de las historias que se quieran incluir en el release;
-  T131-T133 específicamente requieren que todos los módulos con rutas (US1-US7) ya estén
+  T131-T133 específicamente requieren que todos los módulos con rutas (US1a/US1b-US7) ya estén
   montados
 
 ### User Story Dependencies
 
-- **US1 (P1)**: sin dependencias de otra historia — es el MVP
+- **US1 (P1)**: sin dependencias de otra historia — Phase 3a (usuario/contraseña) es el MVP;
+  Phase 3b (passkeys) solo depende de Phase 3a, no de US2-US7 — su ubicación al final del archivo
+  es una decisión de orden de entrega, no una dependencia técnica
 - **US2 (P1)**: sin dependencia de otra historia además de Foundational; es independientemente
   testeable dando de alta fuentes/categorías propias (no hay seed automático, FR-009/FR-012)
 - **US3 (P1)**: **depende de US2** para tener al menos una fuente de dinero y una categoría con
@@ -672,12 +750,13 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 
 - Todas las tareas [P] de Setup pueden correr en paralelo
 - Todas las tareas [P] de Foundational pueden correr en paralelo (dentro de la Phase 2)
-- Una vez completada Foundational, US1, US2 y US7 pueden desarrollarse en paralelo de inmediato
+- Una vez completada Foundational, US1a, US2 y US7 pueden desarrollarse en paralelo de inmediato
   (ninguna depende de otra historia); US3 no puede cerrarse funcionalmente hasta que US2 tenga
   al menos una fuente/categoría de prueba, aunque su código puede prepararse en paralelo; US4 y
   US6 pueden empezar su backend en paralelo con US3 pero su frontend depende del shell de
   "Transacciones" (T098, US3); US5 no puede empezar su tarea de frontend (T112) hasta que T100
-  (US3) exista
+  (US3) exista; Phase 3b (passkeys) podría empezar en paralelo apenas cierra Phase 3a, pero por
+  la decisión de orden de entrega se hace al final, después de US7
 - Dentro de cada historia, todos los tests marcados [P] pueden correr en paralelo entre sí
 
 ---
@@ -685,20 +764,28 @@ resultado, y verificar que un fallo de la fuente se comunica sin mostrar un valo
 ## Parallel Example: User Story 1
 
 ```bash
-# Lanzar todos los tests de US1 en paralelo:
+# Phase 3a — lanzar todos los tests de US1 (usuario/contraseña) en paralelo:
 Task: "Contract test POST /auth/register en backend/tests/contract/auth-register.test.ts"
 Task: "Contract test POST /auth/login en backend/tests/contract/auth-login.test.ts"
 Task: "Contract test POST /auth/logout en backend/tests/contract/auth-logout.test.ts"
-Task: "Contract test WebAuthn en backend/tests/contract/auth-webauthn.test.ts"
-Task: "Contract test /auth/passkeys en backend/tests/contract/auth-passkeys.test.ts"
 Task: "Integration test de bloqueo por intentos fallidos en backend/tests/integration/auth-lockout.test.ts"
 Task: "Integration test de expiración de sesión en backend/tests/integration/auth-session-expiry.test.ts"
 Task: "Test de frontend Login/Registro en frontend/__tests__/auth/login-register.test.tsx"
 Task: "Test de frontend Dashboard shell en frontend/__tests__/auth/dashboard-shell.test.tsx"
-Task: "Test de frontend PasskeyManager en frontend/__tests__/auth/passkey-manager.test.tsx"
 
-# Lanzar entidades de dominio de US1 en paralelo (una vez que los tests de arriba fallan):
+# Lanzar la entidad de dominio de US1a en paralelo (una vez que los tests de arriba fallan):
 Task: "Entidad User en backend/src/modules/auth/domain/user.ts"
+```
+
+```bash
+# Phase 3b (al final, después de US7) — tests de passkeys en paralelo:
+Task: "Contract test WebAuthn en backend/tests/contract/auth-webauthn.test.ts"
+Task: "Contract test /auth/passkeys en backend/tests/contract/auth-passkeys.test.ts"
+Task: "Test de frontend PasskeyManager en frontend/__tests__/auth/passkey-manager.test.tsx"
+Task: "Extender contract test de registro con la variante passkey en backend/tests/contract/auth-register.test.ts"
+Task: "Extender test de frontend Login/Registro con los botones '...con passkey' en frontend/__tests__/auth/login-register.test.tsx"
+
+# Lanzar la entidad de dominio de passkeys en paralelo (una vez que los tests de arriba fallan):
 Task: "Entidad PasskeyCredential en backend/src/modules/auth/domain/passkeyCredential.ts"
 ```
 
@@ -706,18 +793,19 @@ Task: "Entidad PasskeyCredential en backend/src/modules/auth/domain/passkeyCrede
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 únicamente)
+### MVP First (User Story 1a únicamente)
 
 1. Completar Phase 1: Setup
 2. Completar Phase 2: Foundational (crítico — bloquea todas las historias)
-3. Completar Phase 3: US1
-4. **DETENER Y VALIDAR**: probar US1 de forma independiente (registro/login/logout/passkeys)
+3. Completar Phase 3a: US1 (usuario/contraseña)
+4. **DETENER Y VALIDAR**: probar US1a de forma independiente (registro/login/logout con
+   usuario/contraseña; passkeys todavía no existen en esta etapa)
 5. Desplegar/demostrar si está listo
 
 ### Incremental Delivery
 
 1. Setup + Foundational → base lista
-2. US1 → probar de forma independiente → demo (MVP: acceso seguro)
+2. US1a → probar de forma independiente → demo (MVP: acceso seguro con usuario/contraseña)
 3. US2 → probar de forma independiente → demo (alta de fuentes de dinero y categorías propias)
 4. US3 → probar de forma independiente → demo (alta, edición y borrado de movimientos, con el
    monto de cada fuente siempre recalculado)
@@ -725,7 +813,9 @@ Task: "Entidad PasskeyCredential en backend/src/modules/auth/domain/passkeyCrede
 6. US5 → probar de forma independiente → demo (filtros/paginación sobre el historial de US3)
 7. US6 → probar de forma independiente → demo (gráficos)
 8. US7 → probar de forma independiente → demo (conversor)
-9. Polish
+9. US1b (Phase 3b) → probar de forma independiente → demo (passkeys como método alternativo,
+   última pieza antes de Polish, por la decisión de orden de entrega)
+10. Polish
 
 ### Parallel Team Strategy
 
@@ -738,6 +828,12 @@ frontend hasta que `TransactionHistory` de US3 exista.
 
 ## Notes
 
+- **T092 no existe**: la numeración salta de T091 a T093 en la Phase 5. Se verificó el
+  historial de git de este archivo (`git log --all -p -- specs/001-finanzas-personales/tasks.md`)
+  y no hay rastro de que T092 haya existido nunca — es un salto de numeración manual entre
+  sesiones de edición, no una tarea eliminada. Se deja documentado acá en vez de renumerar,
+  para no invalidar referencias a IDs existentes en otras partes de este archivo
+  (`/speckit-analyze` 2026-07-25, INC3).
 - [P] = archivos distintos, sin dependencias pendientes
 - [Story] mapea cada tarea a su historia de usuario para trazabilidad
 - Cada historia debe quedar completable y testeable de forma independiente

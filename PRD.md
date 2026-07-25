@@ -1,8 +1,8 @@
 # PRD-001: Aplicación Web de Finanzas Personales — Centraliza el control de ingresos y egresos en múltiples bancos y efectivo (ARS/USD), con acceso seguro mediante passkeys o contraseña
 
-Versión: 2.2
+Versión: 2.3
 
-Fecha: 24-07-2026
+Fecha: 25-07-2026
 
 ---
 
@@ -37,6 +37,8 @@ Los usuarios argentinos administran dinero distribuido en múltiples bancos loca
 | RF-05 | El sistema debe permitir al usuario registrar más de una passkey en su cuenta |
 | RF-06 | El sistema debe mostrar el listado de passkeys registradas con el nombre o identificador de dispositivo de cada una |
 | RF-07 | El sistema debe permitir al usuario eliminar una passkey registrada, siempre que quede al menos una activa en la cuenta |
+
+**Nota de implementación (orden de entrega):** RF-01 a RF-07 se construyen en dos etapas. La primera etapa implementa la aplicación completa usando exclusivamente usuario y contraseña como método de autenticación. Recién cuando esa base está terminada se incorpora el soporte de passkeys (WebAuthn/FIDO2) como método alternativo de registro y autenticación. El comportamiento final (un único método por cuenta, a elección del usuario entre los dos) no cambia por esta secuencia de entrega.
 
 ### Fuentes de dinero
 
@@ -129,6 +131,8 @@ Los usuarios argentinos administran dinero distribuido en múltiples bancos loca
 | RNF-08 | Resiliencia | Si la API de dolarapi.com no responde en más de 5 segundos, el sistema debe mostrar un mensaje de error; la aplicación permanece navegable y funcional |
 | RNF-09 | Compatibilidad | La aplicación debe funcionar en las últimas dos versiones de Chrome, Firefox, Safari y Edge |
 | RNF-10 | Privacidad | El backend debe verificar en cada petición que el usuario autenticado sea el propietario de los datos solicitados; ningún dato (transacciones, saldos, fuentes de dinero, categorías, passkeys) de un usuario debe ser accesible ni modificable por otro usuario |
+| RNF-11 | Usabilidad | El sistema debe ofrecer modo claro y modo oscuro para toda la interfaz, aplicando modo oscuro por defecto al cargar la aplicación, y debe permitir al usuario alternar entre ambos modos |
+| RNF-12 | Usabilidad | Todo indicador de carga (loader) debe representarse como un círculo que se llena progresivamente con el color #376BCB mientras gira, en una animación de carga circular continua, hasta que la operación en curso finaliza |
 
 ---
 
