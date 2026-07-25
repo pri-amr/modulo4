@@ -141,23 +141,58 @@ según `plan.md` → Project Structure.
   `frontend/__tests__/__mocks__/handleRequest.test.ts` — escribir primero, debe fallar
 - [X] T030 [P] Implementar `handleRequest(method, endpoint, body?, headers?)` en
   `frontend/src/services/handleRequest.ts` (hace pasar T029)
+- [X] T149 [P] Test unitario de `LoadingProvider` (arranca idle, `start()`/`stop()` con conteo
+  superpuesto, muestra/oculta `Loader`, `useLoading()` fuera del provider lanza error) en
+  `frontend/__tests__/providers/loading-provider.test.tsx` — escribir primero, debe fallar.
+  **Corrección `/speckit-analyze` 2026-07-25 (CON1)**: T031 estaba marcada `[X]` sin este test;
+  se revirtió temporalmente la implementación a un stub, se confirmó que este test fallaba
+  (rojo), y se restauró la implementación original para hacerlo pasar (verde)
 - [X] T031 [P] Implementar `LoadingProvider` (estado global de carga) en
-  `frontend/src/providers/LoadingProvider.tsx` (depende de T030). **Nota**: cada pantalla
-  llama `start()`/`stop()` alrededor de su propio uso de `handleRequest` (vía `useLoading()`),
-  en vez de que `handleRequest` lo dispare automáticamente — más simple de testear mockeando
-  `handleRequest` por componente; revisar si conviene automatizarlo cuando haya más de una
-  pantalla usándolo.
+  `frontend/src/providers/LoadingProvider.tsx` (depende de T030; hace pasar T149). **Nota**: cada
+  pantalla llama `start()`/`stop()` alrededor de su propio uso de `handleRequest` (vía
+  `useLoading()`), en vez de que `handleRequest` lo dispare automáticamente — más simple de
+  testear mockeando `handleRequest` por componente; revisar si conviene automatizarlo cuando
+  haya más de una pantalla usándolo.
+- [X] T144 [P] Test unitario de `Loader` (overlay circular a pantalla completa con `role=status`;
+  spinner indeterminado tipo Material Design — arco que crece y se achica mientras gira — en el
+  color `#376BCB`) en `frontend/__tests__/shared/loader.test.tsx` — escribir primero, debe fallar
+  (FR-055). **Corrección `/speckit-analyze` 2026-07-25 (CON1/COV2)**: T032 estaba marcada `[X]`
+  sin este test y sin el color/animación de FR-055; se agregó este test contra la implementación
+  anterior (confirmado rojo), y se reimplementó `Loader.tsx` para hacerlo pasar (verde)
 - [X] T032 [P] Implementar el overlay `Loader` circular a pantalla completa, fondo
-  semitransparente, bloqueo de clicks en `frontend/src/components/shared/Loader.tsx`
+  semitransparente, bloqueo de clicks, con spinner SVG indeterminado (arco `stroke-dasharray`
+  animado, keyframe `loader-dash` en `frontend/tailwind.config.ts`) en el color `#376BCB`, en
+  `frontend/src/components/shared/Loader.tsx` (hace pasar T144, FR-055)
 - [ ] T033 [P] Implementar el componente `Button` compartido (fondo más claro en `:hover`) en
   `frontend/src/components/shared/Button.tsx`
 - [ ] T034 [P] Implementar el componente `Input` compartido (label fuera y arriba, esquinas
   10px) en `frontend/src/components/shared/Input.tsx`
 - [ ] T035 [P] Implementar los componentes `Card`/`Modal` compartidos en
   `frontend/src/components/shared/Card.tsx` y `frontend/src/components/shared/Modal.tsx`
-- [X] T036 Configurar el layout raíz con modo oscuro por defecto y `LoadingProvider` montado en
-  `frontend/src/app/layout.tsx` (depende de T031, T032) — shell mínimo (html/body + clase
-  `dark` + provider), sin el contenido del Dashboard (T064, Historia 1)
+- [X] T145 [P] Test unitario de `useThemeStore` (default oscuro, `toggleTheme()` alterna
+  claro/oscuro, persiste la preferencia en `localStorage`) en
+  `frontend/__tests__/stores/theme-store.test.ts` — escribir primero, debe fallar (FR-054)
+- [X] T146 [P] Implementar `useThemeStore` (`zustand` + middleware `persist`, backing en
+  `localStorage`, clave `theme-preference`) en `frontend/src/stores/themeStore.ts` (hace pasar
+  T145, FR-054)
+- [X] T147 [P] Test unitario de `ThemeToggle` (ícono fijo con clase `fixed`; al hacer click
+  alterna el tema en `useThemeStore` y la clase `dark` en `document.documentElement`) en
+  `frontend/__tests__/shared/theme-toggle.test.tsx` — escribir primero, debe fallar (FR-054)
+- [X] T148 [P] Implementar `ThemeToggle` (ícono fijo visible en toda pantalla — incluidas
+  Login/Registro —, `@heroicons/react` Sun/Moon según el tema activo) en
+  `frontend/src/components/shared/ThemeToggle.tsx` (depende de T146; hace pasar T147, FR-054)
+- [X] T150 [P] Extender el test de `RootLayout` (T036) para exigir que también monte
+  `ThemeToggle` (además de la clase `dark` y `LoadingProvider`) en
+  `frontend/__tests__/app/layout.test.tsx` — escribir primero, debe fallar (FR-054). Requirió
+  agregar un mock de `./globals.css` (`jest.mock(..., { virtual: true })`) porque el proyecto no
+  tenía un `moduleNameMapper` de CSS para tests que importan `app/layout.tsx` directamente
+- [X] T036 Configurar el layout raíz con modo oscuro por defecto, `LoadingProvider` y
+  `ThemeToggle` montados en `frontend/src/app/layout.tsx` (depende de T031, T032, T148; hace
+  pasar T150) — shell mínimo (html/body + clase `dark` + provider + toggle), sin el contenido
+  del Dashboard (T064, Historia 1). **Corrección `/speckit-analyze` 2026-07-25 (CON1)**: no tenía
+  test; se revirtió temporalmente a un stub sin clase `dark` ni `LoadingProvider`, se confirmó
+  rojo contra un primer test, y luego se agregó `ThemeToggle` con su propio ciclo rojo-verde
+  (T150)
 - [ ] T037 [P] Configurar el esqueleto de next-auth (estrategia `jwt`, sin providers todavía) en
   `frontend/src/app/api/auth/[...nextauth]/route.ts` (research.md §3)
 
