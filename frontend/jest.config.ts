@@ -9,6 +9,11 @@ const config: Config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  // tsconfig.json usa jsx:"preserve" para el compilador de Next.js (SWC); ts-jest ejecuta
+  // los tests directo en Node y necesita jsx:"react-jsx" para transformar JSX a JS.
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: { jsx: "react-jsx" } }],
+  },
   clearMocks: true,
 };
 
