@@ -10,14 +10,17 @@ async function main(): Promise<void> {
   const env = loadEnv();
   await connectToDatabase(env.MONGODB_URI);
 
-  const app = createApp({
-    transactions: createTransactionRoutes({
-      sessionSecret: env.SESSION_JWT_SECRET,
-      transactionRepository: new MongoTransactionRepository(),
-      moneySourceRepository: new MongoMoneySourceRepository(),
-      categoryRepository: new MongoCategoryRepository(),
-    }),
-  });
+  const app = createApp(
+    {
+      transactions: createTransactionRoutes({
+        sessionSecret: env.SESSION_JWT_SECRET,
+        transactionRepository: new MongoTransactionRepository(),
+        moneySourceRepository: new MongoMoneySourceRepository(),
+        categoryRepository: new MongoCategoryRepository(),
+      }),
+    },
+    { allowedOrigin: env.WEBAUTHN_ORIGIN },
+  );
   app.listen(Number(env.PORT), () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on port ${env.PORT}`);
