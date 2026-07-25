@@ -118,7 +118,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
     start();
     try {
       const amount = parseArgentineAmount(form.amount) as number;
-      const transaction = await handleRequest<CreatedTransaction>("POST", "/transactions", {
+      const transaction = await handleRequest<CreatedTransaction>("POST", "/api/v1/transactions", {
         type: form.type,
         amount,
         currency: form.currency,

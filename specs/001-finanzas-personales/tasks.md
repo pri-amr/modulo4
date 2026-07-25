@@ -54,7 +54,12 @@ según `plan.md` → Project Structure.
   `frontend/jest.config.ts`
 - [X] T008 [P] Crear `backend/.env.example` y `frontend/.env.example` con `MONGODB_URI`,
   `SESSION_JWT_SECRET`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`, `DOLARAPI_BASE_URL`,
-  `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `BACKEND_API_URL` — solo nombres, sin valores reales
+  `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_BACKEND_API_URL` — solo nombres, sin valores
+  reales. **Corrección 2026-07-24**: `BACKEND_API_URL` renombrada a
+  `NEXT_PUBLIC_BACKEND_API_URL` — `handleRequest.ts` corre en el navegador (llamado desde
+  componentes cliente), y Next.js solo inyecta al bundle del cliente las env vars con
+  prefijo `NEXT_PUBLIC_`; sin el prefijo, `axios` terminaba pegándole al propio servidor de
+  Next.js (404) en vez del backend.
   (Principio IV)
 
 ---

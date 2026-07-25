@@ -94,7 +94,7 @@ describe("TransactionForm", () => {
     await waitFor(() =>
       expect(mockedHandleRequest).toHaveBeenCalledWith(
         "POST",
-        "/transactions",
+        "/api/v1/transactions",
         expect.objectContaining({ amount: 1234.56 }),
       ),
     );
