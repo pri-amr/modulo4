@@ -86,30 +86,54 @@ puntual):
   Radix, ni similares). Cada componente se construye a medida en `components/<funcionalidad>/`
   con clases Tailwind directas; los componentes verdaderamente compartidos entre funcionalidades
   (botón, input, modal base, loader) viven en `components/shared/`.
-- **Paleta de color**: escala neutra de Tailwind (`slate`) para texto/fondos/bordes, más **un**
-  color de acento único para acciones primarias (botones de confirmar, links activos, foco de
-  navegación). Los estados semánticos (éxito, error, advertencia) usan los verdes/rojos/ámbares
-  estándar de Tailwind (`green-*`, `red-*`, `amber-*`) solo en su contexto puntual (mensajes de
-  error de FR-004/FR-020/FR-032, badges de éxito) — no como color protagonista permanente de
-  ingresos/egresos en toda la UI.
+- **Paleta de color — tokens semánticos (fuente de verdad única)**: los colores NO se aplican
+  como pares sueltos `bg-x dark:bg-y` en cada componente (ese patrón es frágil — así se llegó a
+  un bug donde solo los inputs de `TransactionForm` reaccionaban al tema, `/speckit-analyze`+
+  feedback de usuario 2026-07-25). En su lugar, `frontend/src/app/globals.css` define variables
+  CSS en `:root` (modo claro) y `.dark` (modo oscuro), y `frontend/tailwind.config.ts` las
+  expone como colores Tailwind vía el patrón `rgb(var(--color-x) / <alpha-value>)`. Un
+  componente escribe una sola clase (`bg-surface`, `text-fg`) y su valor cambia solo con la
+  clase `dark` del ancestro — nunca hace falta un `dark:` explícito para estos tokens. Paleta
+  elegida (negro/blanco para texto y fondo, violeta/lila como acento principal, azul/celeste
+  para hover y elementos de énfasis secundario como tooltips, grises para texto secundario,
+  rojo/verde para error/éxito):
+
+  | Token | Uso | Claro | Oscuro |
+  | --- | --- | --- | --- |
+  | `bg` | fondo de página (`<body>`) | `#FFFFFF` | `#0B0B12` |
+  | `surface` | fondo de tarjetas, inputs, paneles | `#FFFFFF` | `#17161F` |
+  | `surface-muted` | paneles/filas alternativas, hover sutil | `#F3F2FA` | `#201E2B` |
+  | `fg` | texto principal | `#111114` | `#F5F5F7` |
+  | `fg-muted` | texto secundario (subtítulos, ayudas) | `#6B7280` | `#A0A3B1` |
+  | `line` | bordes y separadores | `#E2E4EA` | `#2A2836` |
+  | `accent` | acento principal — violeta/lila (botones primarios, links activos, foco) | `#7C3AED` | `#9B7BFA` |
+  | `accent-blue` | azul/celeste — `:hover` de `accent`, tooltips, énfasis secundario | `#376BCB` (mismo tono que el `Loader`, FR-055) | `#6EA8FF` |
+  | `success` | éxito | `#1E8E3E` | `#7DD181` |
+  | `error` | error (bordes/mensajes inválidos, FR-004/FR-020/FR-032) | `#DC2626` | `#FF5252` |
+
+  Advertencia usa el `amber-*` estándar de Tailwind puntualmente (no se definió un token
+  dedicado, no hay uso todavía). Este es el único lugar donde se documentan los valores; para
+  cambiar un color se edita `globals.css`, nunca un componente individual.
 - **Modo claro/oscuro**: ambos modos disponibles (FR-054), con modo oscuro por defecto al montar
-  la app (clase `dark` de Tailwind aplicada por defecto; paleta neutra + acento con sus variantes
-  `dark:` correspondientes). El control de alternancia es un **ícono fijo visible en toda
-  pantalla** (incluidas Login y Registro, antes de autenticarse) — no depende del menú
-  hamburguesa del Dashboard, que solo existe una vez logueado. La preferencia se guarda en un
-  store de `zustand` con middleware `persist` (backing en `localStorage`); si en la práctica
-  aparece un parpadeo del tema por defecto antes de que React hidrate y aplique la preferencia
-  guardada (FOUC en el render SSR de Next.js), se migra a leer la preferencia desde una cookie
-  en el servidor para aplicar la clase `dark`/sin clase correcta antes del primer paint, con el
-  store de `zustand` hidratándose desde esa cookie al montar.
+  la app (clase `dark` de Tailwind aplicada por defecto en `<html>`, que dispara el bloque
+  `.dark` de `globals.css` descripto arriba). El control de alternancia es un **ícono fijo
+  visible en toda pantalla** (incluidas Login y Registro, antes de autenticarse) — no depende
+  del menú hamburguesa del Dashboard, que solo existe una vez logueado. La preferencia se guarda
+  en un store de `zustand` con middleware `persist` (backing en `localStorage`); si en la
+  práctica aparece un parpadeo del tema por defecto antes de que React hidrate y aplique la
+  preferencia guardada (FOUC en el render SSR de Next.js), se migra a leer la preferencia desde
+  una cookie en el servidor para aplicar la clase `dark`/sin clase correcta antes del primer
+  paint, con el store de `zustand` hidratándose desde esa cookie al montar.
 - **Íconos**: `@heroicons/react` (set `outline` por defecto, `solid` para estados activos/
   seleccionados), para mantener consistencia visual con Tailwind Labs y evitar mezclar sets.
 - **Tipografía**: fuente por defecto del sistema vía Tailwind (`font-sans`), sin fuente custom
   cargada — evita una dependencia de carga adicional que compita con la meta de SC-003 (< 2s).
 - **Inputs y labels**: todo label va fuera y arriba de su input (nunca flotante ni dentro del
   campo); todo input/select/textarea tiene esquinas redondeadas de 10px (`rounded-[10px]`).
-- **Botones**: en `:hover`, el fondo cambia a una variante más clara del color base del botón
-  (para el color de acento y para los semánticos), sin otro cambio de estilo asociado.
+- **Botones**: en `:hover`, un botón con fondo `accent` (violeta/lila) cambia a `accent-blue`
+  (azul/celeste) — no una variante más clara del mismo tono, sino el segundo color de acento de
+  la paleta (ver "Paleta de color" arriba); los botones con color semántico (éxito/error) sí
+  usan una variante más clara del mismo tono en `:hover`, sin cambio de estilo adicional.
 
 ### Layout de pantallas
 
