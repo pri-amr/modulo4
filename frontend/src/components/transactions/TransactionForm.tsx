@@ -83,8 +83,8 @@ function validate(form: FormState): FieldErrors {
 }
 
 function fieldClass(hasError: boolean): string {
-  return `w-full rounded-field border px-3 py-2 dark:bg-slate-900 dark:text-slate-100 ${
-    hasError ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+  return `w-full rounded-field border bg-surface px-3 py-2 text-fg ${
+    hasError ? "border-error" : "border-line"
   }`;
 }
 
@@ -173,7 +173,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
           value={form.amount}
           onChange={(e) => updateField("amount", e.target.value)}
         />
-        {errors.amount && <p className="mt-1 text-sm text-red-500">{errors.amount}</p>}
+        {errors.amount && <p className="mt-1 text-sm text-error">{errors.amount}</p>}
       </div>
 
       <div>
@@ -194,7 +194,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
           ))}
         </select>
         {errors.moneySourceId && (
-          <p className="mt-1 text-sm text-red-500">{errors.moneySourceId}</p>
+          <p className="mt-1 text-sm text-error">{errors.moneySourceId}</p>
         )}
       </div>
 
@@ -211,7 +211,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
           <option value="ARS">ARS</option>
           <option value="USD">USD</option>
         </select>
-        {errors.currency && <p className="mt-1 text-sm text-red-500">{errors.currency}</p>}
+        {errors.currency && <p className="mt-1 text-sm text-error">{errors.currency}</p>}
       </div>
 
       <div>
@@ -231,7 +231,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
             </option>
           ))}
         </select>
-        {errors.categoryId && <p className="mt-1 text-sm text-red-500">{errors.categoryId}</p>}
+        {errors.categoryId && <p className="mt-1 text-sm text-error">{errors.categoryId}</p>}
       </div>
 
       <div>
@@ -245,7 +245,7 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
           value={form.date}
           onChange={(e) => updateField("date", e.target.value)}
         />
-        {errors.date && <p className="mt-1 text-sm text-red-500">{errors.date}</p>}
+        {errors.date && <p className="mt-1 text-sm text-error">{errors.date}</p>}
       </div>
 
       <div>
@@ -260,16 +260,16 @@ export function TransactionForm({ moneySources, categories, onCreated }: Transac
           onChange={(e) => updateField("description", e.target.value)}
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+          <p className="mt-1 text-sm text-error">{errors.description}</p>
         )}
       </div>
 
-      {submitError && <p className="text-sm text-red-500">{submitError}</p>}
+      {submitError && <p className="text-sm text-error">{submitError}</p>}
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-field bg-accent px-4 py-2 text-white hover:bg-accent-light disabled:opacity-50"
+        className="rounded-field bg-accent px-4 py-2 text-white hover:bg-accent-blue disabled:opacity-50"
       >
         Guardar
       </button>

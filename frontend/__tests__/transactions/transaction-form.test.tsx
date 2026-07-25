@@ -42,7 +42,7 @@ describe("TransactionForm", () => {
     await user.click(screen.getByRole("button", { name: "Guardar" }));
 
     expect(screen.getByText("El monto es obligatorio")).toBeInTheDocument();
-    expect(screen.getByLabelText("Monto")).toHaveClass("border-red-500");
+    expect(screen.getByLabelText("Monto")).toHaveClass("border-error");
     expect(screen.getByText("La fuente de dinero es obligatoria")).toBeInTheDocument();
     expect(screen.getByText("La categoría es obligatoria")).toBeInTheDocument();
     expect(screen.getByText("La fecha es obligatoria")).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe("TransactionForm", () => {
     await user.type(screen.getByLabelText("Monto"), "100");
 
     expect(screen.queryByText("El monto es obligatorio")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Monto")).not.toHaveClass("border-red-500");
+    expect(screen.getByLabelText("Monto")).not.toHaveClass("border-error");
   });
 
   it("rejects an amount of zero or negative (FR-025 clarificación)", async () => {
@@ -186,6 +186,19 @@ describe("TransactionForm", () => {
     await waitFor(() =>
       expect(screen.getByText("La fuente de dinero no existe")).toBeInTheDocument(),
     );
-    expect(screen.getByLabelText("Fuente de dinero")).toHaveClass("border-red-500");
+    expect(screen.getByLabelText("Fuente de dinero")).toHaveClass("border-error");
+  });
+
+  it("themes fields and the submit button with the semantic tokens, not only for dark mode", () => {
+    renderForm({ moneySources, categories });
+
+    // Regresión: `bg-surface`/`text-fg` cambian de valor solo con la clase `dark` del
+    // ancestro (CSS vars, tailwind.config.ts) — un campo NO debe depender de un par
+    // `dark:bg-x` explícito para verse bien en ambos modos.
+    expect(screen.getByLabelText("Monto")).toHaveClass("bg-surface", "text-fg");
+    expect(screen.getByLabelText("Monto")).not.toHaveClass("dark:bg-slate-900");
+
+    const submitButton = screen.getByRole("button", { name: "Guardar" });
+    expect(submitButton).toHaveClass("bg-accent", "hover:bg-accent-blue");
   });
 });
