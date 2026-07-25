@@ -193,6 +193,15 @@ según `plan.md` → Project Structure.
   test; se revirtió temporalmente a un stub sin clase `dark` ni `LoadingProvider`, se confirmó
   rojo contra un primer test, y luego se agregó `ThemeToggle` con su propio ciclo rojo-verde
   (T150)
+- [X] T151 [P] Definir los tokens de color semánticos (`bg`, `surface`, `surface-muted`, `fg`,
+  `fg-muted`, `line`, `accent`, `accent-blue`, `success`, `error`) como variables CSS en
+  `:root`/`.dark` de `frontend/src/app/globals.css` y exponerlas en `frontend/tailwind.config.ts`
+  vía `rgb(var(--color-x) / <alpha-value>)`, y migrar `TransactionForm.tsx`/`ThemeToggle.tsx` de
+  clases `dark:`-only a estos tokens (plan.md, "Paleta de color"; feedback de usuario
+  2026-07-25: solo los inputs reaccionaban al tema). Test de regresión agregado en
+  `frontend/__tests__/transactions/transaction-form.test.tsx` verificando que los campos usan
+  `bg-surface`/`text-fg` (sin depender de un `dark:` explícito) y que el botón usa
+  `bg-accent`/`hover:bg-accent-blue`
 - [ ] T037 [P] Configurar el esqueleto de next-auth (estrategia `jwt`, sin providers todavía) en
   `frontend/src/app/api/auth/[...nextauth]/route.ts` (research.md §3)
 
