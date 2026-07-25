@@ -336,7 +336,7 @@ y el monto de la fuente reflejan exactamente los datos.
   con 3+ decimales se redondea a 2 —mitad hacia arriba— sin rechazar el guardado FR-043, fecha
   futura FR-044, ownership, `PUT` puede cambiar `moneySourceId`/`currency` FR-018) en
   `backend/tests/contract/transactions.test.ts`
-- [ ] T084 [P] [US3] Integration test: crear un ingreso/egreso recalcula `amountARS` o
+- [X] T084 [P] [US3] Integration test: crear un ingreso/egreso recalcula `amountARS` o
   `amountUSD` de la fuente exactamente en el monto ingresado en
   `backend/tests/integration/transactions-balance-recalc.test.ts` (FR-052)
 - [ ] T085 [P] [US3] Integration test: editar una transacción cambiando su fuente de dinero y/o
@@ -389,8 +389,11 @@ y el monto de la fuente reflejan exactamente los datos.
   (solo POST/PUT/DELETE en esta historia; GET con filtros llega en US5; usa T013
   `validateSchema`, FR-048, y T025 `requireOwnership` en `PUT/DELETE /transactions/:id` para
   garantizar 404 ante una transacción de otra cuenta, FR-008/SC-008; depende de T020, T025,
-  T093-T095)
-- [ ] T097 [US3] Montar rutas de transactions en `backend/src/app.ts` (depende de T080, T096)
+  T093-T095). **Estado parcial**: `POST /` ya implementado (depende de T093); `PUT`/`DELETE`
+  quedan pendientes de T094/T095.
+- [X] T097 [US3] Montar rutas de transactions en `backend/src/app.ts` (depende de T080, T096) —
+  cableado real en `backend/src/server.ts` con las implementaciones Mongo; alcanza hoy solo
+  `POST` (lo único que expone T096 por ahora)
 - [ ] T098 [US3] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
   apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx` (depende de T036)
 - [ ] T099 [US3] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
