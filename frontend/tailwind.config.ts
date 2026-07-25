@@ -9,10 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        accent: {
-          DEFAULT: "#3b82f6",
-          light: "#60a5fa",
-        },
+        // Tokens semánticos respaldados por variables CSS (globals.css :root/.dark); un
+        // componente solo necesita `bg-surface`, no `bg-x dark:bg-y` — el valor cambia solo
+        // al alternar la clase `dark` en <html> (FR-054, plan.md "Paleta de color").
+        bg: "rgb(var(--color-bg) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        "surface-muted": "rgb(var(--color-surface-muted) / <alpha-value>)",
+        fg: "rgb(var(--color-fg) / <alpha-value>)",
+        "fg-muted": "rgb(var(--color-fg-muted) / <alpha-value>)",
+        line: "rgb(var(--color-line) / <alpha-value>)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
+        "accent-blue": "rgb(var(--color-accent-blue) / <alpha-value>)",
+        success: "rgb(var(--color-success) / <alpha-value>)",
+        error: "rgb(var(--color-error) / <alpha-value>)",
       },
       borderRadius: {
         field: "10px",
