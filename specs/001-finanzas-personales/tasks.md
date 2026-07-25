@@ -133,20 +133,23 @@ según `plan.md` → Project Structure.
   `frontend/__tests__/__mocks__/handleRequest.test.ts` — escribir primero, debe fallar
 - [X] T030 [P] Implementar `handleRequest(method, endpoint, body?, headers?)` en
   `frontend/src/services/handleRequest.ts` (hace pasar T029)
-- [ ] T031 [P] Implementar `LoadingProvider` (estado global de carga, se activa/desactiva
-  alrededor de cada llamada de `handleRequest`) en `frontend/src/providers/LoadingProvider.tsx`
-  (depende de T030)
-- [ ] T032 [P] Implementar el overlay `Loader` circular a pantalla completa, fondo
-  semitransparente, bloqueo de clicks (`pointer-events: none` en el contenido subyacente) en
-  `frontend/src/components/shared/Loader.tsx`
+- [X] T031 [P] Implementar `LoadingProvider` (estado global de carga) en
+  `frontend/src/providers/LoadingProvider.tsx` (depende de T030). **Nota**: cada pantalla
+  llama `start()`/`stop()` alrededor de su propio uso de `handleRequest` (vía `useLoading()`),
+  en vez de que `handleRequest` lo dispare automáticamente — más simple de testear mockeando
+  `handleRequest` por componente; revisar si conviene automatizarlo cuando haya más de una
+  pantalla usándolo.
+- [X] T032 [P] Implementar el overlay `Loader` circular a pantalla completa, fondo
+  semitransparente, bloqueo de clicks en `frontend/src/components/shared/Loader.tsx`
 - [ ] T033 [P] Implementar el componente `Button` compartido (fondo más claro en `:hover`) en
   `frontend/src/components/shared/Button.tsx`
 - [ ] T034 [P] Implementar el componente `Input` compartido (label fuera y arriba, esquinas
   10px) en `frontend/src/components/shared/Input.tsx`
 - [ ] T035 [P] Implementar los componentes `Card`/`Modal` compartidos en
   `frontend/src/components/shared/Card.tsx` y `frontend/src/components/shared/Modal.tsx`
-- [ ] T036 Configurar el layout raíz con modo oscuro por defecto y `LoadingProvider` montado en
-  `frontend/src/app/layout.tsx` (depende de T031, T032)
+- [X] T036 Configurar el layout raíz con modo oscuro por defecto y `LoadingProvider` montado en
+  `frontend/src/app/layout.tsx` (depende de T031, T032) — shell mínimo (html/body + clase
+  `dark` + provider), sin el contenido del Dashboard (T064, Historia 1)
 - [ ] T037 [P] Configurar el esqueleto de next-auth (estrategia `jwt`, sin providers todavía) en
   `frontend/src/app/api/auth/[...nextauth]/route.ts` (research.md §3)
 
@@ -353,7 +356,7 @@ y el monto de la fuente reflejan exactamente los datos.
   transacción, `CreateTransaction` revierte (borra) la transacción recién creada antes de
   propagar el error — rollback de compensación, research.md §16 — en
   `backend/tests/unit/transactions/createTransaction.test.ts` (FR-020, FR-052)
-- [ ] T089 [P] [US3] Test de frontend: validación, prevención de doble envío (FR-045),
+- [X] T089 [P] [US3] Test de frontend: validación, prevención de doble envío (FR-045),
   conservación de datos ante fallo (FR-020), y selectores de fuente/categoría vacíos si la
   cuenta todavía no dio de alta ninguna (FR-009, FR-012) de `TransactionForm` en
   `frontend/__tests__/transactions/transaction-form.test.tsx`
@@ -394,13 +397,18 @@ y el monto de la fuente reflejan exactamente los datos.
 - [X] T097 [US3] Montar rutas de transactions en `backend/src/app.ts` (depende de T080, T096) —
   cableado real en `backend/src/server.ts` con las implementaciones Mongo; alcanza hoy solo
   `POST` (lo único que expone T096 por ahora)
-- [ ] T098 [US3] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
-  apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx` (depende de T036)
-- [ ] T099 [US3] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
+- [X] T098 [US3] Construir el shell de la pantalla "Transacciones" (grilla de 4 cuadrantes,
+  apilado en columna <500px) en `frontend/src/app/transacciones/page.tsx` (depende de T036) —
+  solo el cuadrante de alta tiene contenido real; saldos/historial/gráfico quedan como
+  secciones vacías hasta US4/US5/US6
+- [X] T099 [US3] Construir el formulario de alta de transacción (cuadrante superior izquierdo,
   botón deshabilitado durante el envío y `Loader` de pantalla completa vía `LoadingProvider`
-  mientras la petición está en curso, FR-045; selectores de fuente/categoría poblados con lo
-  dado de alta en US2) en `frontend/src/components/transactions/TransactionForm.tsx` (depende
-  de T098, T031, T032; hace pasar T089)
+  mientras la petición está en curso, FR-045) en
+  `frontend/src/components/transactions/TransactionForm.tsx` (depende de T098, T031, T032;
+  hace pasar T089). **Nota**: `moneySources`/`categories` se reciben como props (`[]` por
+  ahora); la pantalla los poblará desde `GET /money-sources`/`GET /categories` cuando exista
+  US2. El truncado con "…" + tooltip (Edge Case de spec.md) aplica a T100/T106, que muestran
+  listados, no a este formulario con `<select>` nativos.
 - [ ] T100 [US3] Construir el historial/listado base (cuadrante inferior izquierdo de
   "Transacciones"): renderiza las transacciones (nombre de fuente/categoría y descripción
   truncados con "…" si no entran en el ancho disponible, con tooltip al hover mostrando el
